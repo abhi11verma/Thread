@@ -42,15 +42,13 @@ export async function openDirectory() {
   return handle;
 }
 
-/** Restore a previously-chosen directory handle (may need re-permission). */
+/** Restore a previously-chosen directory handle (only if permission already granted). */
 export async function restoreDirectory() {
   const handle = await loadHandle();
   if (!handle) return null;
-  // Verify permission (user may need to re-grant on refresh)
+  // requestPermission() requires a user gesture — only restore if already granted
   const perm = await handle.queryPermission({ mode: 'readwrite' });
-  if (perm === 'granted') return handle;
-  const req = await handle.requestPermission({ mode: 'readwrite' });
-  return req === 'granted' ? handle : null;
+  return perm === 'granted' ? handle : null;
 }
 
 /** Ensure a sub-directory exists, return its handle. */
