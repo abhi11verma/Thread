@@ -100,19 +100,31 @@ export function AppProvider({ children }) {
 
   // ── Pick directory ──────────────────────────────────────────────────────
   const pickDirectory = useCallback(async () => {
-    const handle = await openDirectory();
-    dispatch({ type: 'SET_DIR', handle });
-    await loadAll(handle);
+    try {
+      const handle = await openDirectory();
+      dispatch({ type: 'SET_DIR', handle });
+      await loadAll(handle);
+    } catch (e) {
+      // User cancelled picker or permission denied — not an error worth surfacing
+      if (e.name !== 'AbortError') {
+        dispatch({ type: 'SET_ERROR', message: e.message });
+      }
+    }
   }, [loadAll]);
 
   // ── Restore directory on mount ──────────────────────────────────────────
   const tryRestore = useCallback(async () => {
-    const handle = await restoreDirectory();
-    if (handle) {
-      dispatch({ type: 'SET_DIR', handle });
-      await loadAll(handle);
-    } else {
+    try {
+      const handle = await restoreDirectory();
+      if (handle) {
+        dispatch({ type: 'SET_DIR', handle });
+        await loadAll(handle);
+      } else {
+        dispatch({ type: 'SET_LOADING', value: false });
+      }
+    } catch (e) {
       dispatch({ type: 'SET_LOADING', value: false });
+      console.warn('Failed to restore directory:', e);
     }
   }, [loadAll]);
 
