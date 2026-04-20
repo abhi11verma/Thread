@@ -5,9 +5,15 @@ import { relativeTime } from '../lib/utils.js';
 export default function ScratchView() {
   const { scratches, threads, deleteScratch, assignScratch } = useApp();
   const [assigningId, setAssigningId] = useState(null);
+  const [justAssignedIds, setJustAssignedIds] = useState(new Set());
 
-  const unassigned = scratches.filter(s => s.threadId === 'unassigned');
-  const assigned = scratches.filter(s => s.threadId !== 'unassigned');
+  function handleAssign(scratchId, threadId) {
+    assignScratch(scratchId, threadId);
+    setJustAssignedIds(prev => new Set([...prev, scratchId]));
+    setAssigningId(null);
+  }
+
+  const visible = scratches.filter(s => s.threadId === 'unassigned' || justAssignedIds.has(s.id));
 
   return (
     <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: '22px 28px 40px', background: 'var(--paper)' }}>
@@ -16,36 +22,16 @@ export default function ScratchView() {
         Unthreaded notes — captured fast, assign to a thread when ready.
       </p>
 
-      {scratches.length === 0 && (
+      {visible.length === 0 && (
         <div style={{ color: 'var(--ink-soft)', fontSize: 13 }}>No scratch notes yet.</div>
       )}
 
-      {unassigned.length > 0 && (
+      {visible.length > 0 && (
         <section style={{ marginBottom: 32 }}>
-          <div className="kicker" style={{ marginBottom: 10 }}>Unassigned · {unassigned.length}</div>
+          <div className="kicker" style={{ marginBottom: 10 }}>Unassigned · {scratches.filter(s => s.threadId === 'unassigned').length}</div>
           <div className="sk-card" style={{ overflow: 'hidden', padding: 0 }}>
-            {unassigned.map((s, i) => (
-              <ScratchRow
-                key={s.id}
-                s={s}
-                threads={threads}
-                assigningId={assigningId}
-                setAssigningId={setAssigningId}
-                onAssign={assignScratch}
-                onDelete={deleteScratch}
-                last={i === unassigned.length - 1}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {assigned.length > 0 && (
-        <section>
-          <div className="kicker" style={{ marginBottom: 10 }}>Assigned · {assigned.length}</div>
-          <div className="sk-card" style={{ overflow: 'hidden', padding: 0 }}>
-            {assigned.map((s, i) => {
-              const thread = threads.find(t => t.id === s.threadId);
+            {visible.map((s, i) => {
+              const thread = justAssignedIds.has(s.id) ? threads.find(t => t.id === s.threadId) : null;
               return (
                 <ScratchRow
                   key={s.id}
@@ -53,10 +39,10 @@ export default function ScratchView() {
                   threads={threads}
                   assigningId={assigningId}
                   setAssigningId={setAssigningId}
-                  onAssign={assignScratch}
+                  onAssign={handleAssign}
                   onDelete={deleteScratch}
                   threadLabel={thread?.title}
-                  last={i === assigned.length - 1}
+                  last={i === visible.length - 1}
                 />
               );
             })}
@@ -108,7 +94,7 @@ function ScratchRow({ s, threads, assigningId, setAssigningId, onAssign, onDelet
           {threads.map(t => (
             <div
               key={t.id}
-              onClick={() => { onAssign(s.id, t.id); setAssigningId(null); }}
+              onClick={() => onAssign(s.id, t.id)}
               style={{
                 padding: '6px 8px', borderRadius: 5, cursor: 'pointer',
                 fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
