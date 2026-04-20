@@ -1,0 +1,17 @@
+# Ignore large generated directories
+node_modules/
+dist/
+build/
+
+# Lock files (too noisy, not useful for analysis)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# OS and editor artifacts
+.DS_Store
+.idea/
+.vscode/
+
+# Logs
+*.log

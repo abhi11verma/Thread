@@ -1,0 +1,404 @@
+import { useState } from 'react';
+import { useApp } from '../store/AppContext.jsx';
+import {
+  IconSpark, IconInbox, IconThread, IconCheck, IconPeople,
+  IconCal, IconArchive, IconPlus, IconSun, IconMoon, IconUpdate, IconNote,
+  IconFolder, IconX, IconGear,
+} from './atoms/Icons.jsx';
+import { Tag } from './atoms/Chips.jsx';
+import { today } from '../lib/utils.js';
+import { computeStreak } from '../lib/markdown.js';
+
+const NAV = [
+  { key: 'dashboard', label: 'Dashboard', Icon: IconSpark },
+  { key: 'today',     label: 'Today',       Icon: IconInbox },
+  { key: 'threads',   label: 'All threads', Icon: IconThread },
+  { key: 'fu',        label: 'Follow-ups',  Icon: IconCheck },
+  { key: 'people',    label: 'People',      Icon: IconPeople },
+  { key: 'scratch',   label: 'Scratch',     Icon: IconNote },
+  { key: 'cal',       label: 'Calendar',    Icon: IconCal },
+  { key: 'arch',      label: 'Archive',     Icon: IconArchive },
+];
+
+const THEMES = [
+  { key: 'warm', label: 'Warm',  bg: '#F2EDE4', accent: '#C4622D', ink: '#1C1916' },
+  { key: 'light', label: 'Light', bg: '#FFFFFF', accent: '#2D4A6B', ink: '#0A0A0A' },
+  { key: 'cool', label: 'Cool',  bg: '#F0F4F8', accent: '#2557C2', ink: '#0D1B2A' },
+  { key: 'dark', label: 'Dark',  bg: '#18140F', accent: '#D4784A', ink: '#F0EBE3' },
+];
+
+export default function Sidebar({ theme, setTheme, onNewThread }) {
+  const { section, activeThreadId, threads, scratches, rituals, streaks, doneDates, setSection, openThread, getAllFollowups, rescanDirectory, pickDirectory, dirHandle, loading } = useApp();
+  const [showSettings, setShowSettings] = useState(false);
+
+  const allTags = [...new Set(threads.flatMap(t => t.tags))];
+  const pinnedThreads = threads.filter(t => t.status === 'active').slice(0, 6);
+  const t0 = today();
+
+  function countFor(key) {
+    if (key === 'today') return getAllFollowups().filter(f => f.due === t0 || f.due === 'today').length || null;
+    if (key === 'threads') return threads.length || null;
+    if (key === 'fu') return getAllFollowups().filter(f => f.state === 'open' || f.state === 'waiting').length || null;
+    if (key === 'scratch') return scratches.filter(s => s.threadId === 'unassigned').length || null;
+    return null;
+  }
+
+  return (
+    <>
+    <aside
+      style={{
+        width: 240,
+        borderRight: '1px solid var(--line)',
+        background: 'var(--paper-2)',
+        padding: '14px 10px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
+        minHeight: 0,
+        overflow: 'hidden',
+        flexShrink: 0,
+      }}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 6px' }}>
+        <div className="font-display" style={{ fontSize: 17, letterSpacing: -0.3 }}>
+          Thread <span className="font-mono" style={{ fontSize: 10, color: 'var(--ink-soft)', marginLeft: 4, fontWeight: 400, letterSpacing: '0.1em' }}>v1</span>
+        </div>
+        <div style={{ display: 'flex', gap: 4 }} />
+      </div>
+
+      {/* New thread */}
+      <button
+        className="btn btn-primary"
+        style={{ justifyContent: 'center', width: '100%' }}
+        onClick={onNewThread}
+      >
+        <IconPlus size={13} /> New thread <span className="kbd" style={{ borderColor: '#555', background: '#222', color: '#ddd' }}>N</span>
+      </button>
+
+      {/* Nav */}
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {NAV.map(({ key, label, Icon }) => {
+          const active = section === key && !(section === 'threads' && activeThreadId);
+          const count = countFor(key);
+          return (
+            <button
+              key={key}
+              onClick={() => setSection(key)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '5px 8px', borderRadius: 6,
+                background: active ? 'var(--paper)' : 'transparent',
+                border: active ? '1px solid var(--line-strong)' : '1px solid transparent',
+                cursor: 'pointer', fontFamily: 'inherit', color: 'var(--ink)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Icon size={14} /> <span style={{ fontSize: 13 }}>{label}</span>
+              </div>
+              {count != null && (
+                <span className="font-mono" style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{count}</span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Pinned threads */}
+      {pinnedThreads.length > 0 && (
+        <>
+          <div className="kicker" style={{ padding: '0 8px', marginTop: 2 }}>Threads — active</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 4px' }}>
+            {pinnedThreads.map(t => {
+              const isActive = section === 'thread' && t.id === activeThreadId;
+              const openCount = t.blocks.filter(b => b.type === 'FOLLOWUP' && (b.state === 'open' || b.state === 'waiting')).length;
+              const waitingCount = t.blocks.filter(b => b.type === 'FOLLOWUP' && b.state === 'waiting').length;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => openThread(t.id)}
+                  style={{
+                    textAlign: 'left', padding: '5px 8px',
+                    border: 'none',
+                    background: isActive ? 'var(--paper)' : 'transparent',
+                    borderLeft: isActive ? '2px solid var(--ink)' : '2px solid transparent',
+                    borderRadius: 4, cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 8, color: t.status === 'active' ? 'var(--ink)' : 'var(--ink-faint)' }}>●</span>
+                    <span style={{ fontSize: 13, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {t.title}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 1, paddingLeft: 14 }}>
+                    <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{openCount} open</span>
+                    {waitingCount > 0 && (
+                      <span style={{ fontSize: 11, color: 'var(--warn)' }}>· {waitingCount} waiting</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Tags */}
+      {allTags.length > 0 && (
+        <>
+          <div className="kicker" style={{ padding: '0 8px' }}>Tags</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: '0 6px' }}>
+            {allTags.map(t => <Tag key={t} t={t} />)}
+          </div>
+        </>
+      )}
+
+      <div style={{ flex: 1 }} />
+
+      {/* The Daily — persistent sidebar strip */}
+      {rituals.length > 0 && (
+        <TheDailySidebar rituals={rituals} streaks={streaks} doneDates={doneDates} />
+      )}
+
+      {/* Settings */}
+      <button
+        className="btn btn-ghost"
+        style={{ justifyContent: 'flex-start', gap: 8, padding: '5px 8px', fontSize: 12, color: showSettings ? 'var(--ink)' : 'var(--ink-soft)' }}
+        onClick={() => setShowSettings(s => !s)}
+        title="Settings"
+      >
+        <IconGear size={14} /> Settings
+      </button>
+    </aside>
+
+    {/* Settings modal — centered overlay */}
+    {showSettings && (
+      <div
+        onClick={() => setShowSettings(false)}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          background: 'rgba(0,0,0,0.45)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{
+            width: 640, maxWidth: '90vw', maxHeight: '80vh',
+            background: 'var(--paper-2)',
+            border: '1px solid var(--line-strong)',
+            borderRadius: 10,
+            boxShadow: '0 24px 64px rgba(0,0,0,0.35)',
+            display: 'flex',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Left nav */}
+          <div style={{
+            width: 180, flexShrink: 0,
+            borderRight: '1px solid var(--line)',
+            padding: '20px 10px',
+            background: 'var(--paper)',
+            display: 'flex', flexDirection: 'column', gap: 2,
+          }}>
+            <div className="kicker" style={{ padding: '0 8px', marginBottom: 8 }}>Options</div>
+            <button
+              className="btn btn-ghost"
+              style={{ justifyContent: 'flex-start', gap: 8, padding: '6px 10px', fontSize: 13, background: 'var(--paper-2)', border: '1px solid var(--line)' }}
+            >
+              <IconGear size={14} /> General
+            </button>
+          </div>
+
+          {/* Right content */}
+          <div style={{ flex: 1, padding: '24px 28px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 500 }}>General</h2>
+              <button className="btn btn-ghost" style={{ padding: '4px 6px' }} onClick={() => setShowSettings(false)}>
+                <IconX size={15} />
+              </button>
+            </div>
+
+            {/* Appearance */}
+            <div style={{ borderBottom: '1px solid var(--line)', paddingBottom: 24, marginBottom: 24 }}>
+              <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 3 }}>Appearance</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-soft)', marginBottom: 12 }}>
+                Choose a colour tone for the interface.
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {THEMES.map(t => (
+                  <button
+                    key={t.key}
+                    onClick={() => setTheme(t.key)}
+                    style={{
+                      flex: 1,
+                      border: theme === t.key ? `2px solid var(--ink)` : `1.5px solid var(--line-strong)`,
+                      borderRadius: 8,
+                      padding: 0,
+                      cursor: 'pointer',
+                      overflow: 'hidden',
+                      background: 'transparent',
+                      outline: 'none',
+                    }}
+                    title={t.label}
+                  >
+                    {/* Swatch */}
+                    <div style={{
+                      height: 44,
+                      background: t.bg,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 5,
+                    }}>
+                      <span style={{
+                        width: 10, height: 10,
+                        borderRadius: '50%',
+                        background: t.accent,
+                        display: 'inline-block',
+                      }} />
+                      <span style={{
+                        fontFamily: 'JetBrains Mono, monospace',
+                        fontSize: 9,
+                        color: t.ink,
+                        letterSpacing: '0.06em',
+                      }}>Aa</span>
+                    </div>
+                    {/* Label */}
+                    <div style={{
+                      padding: '5px 0',
+                      fontSize: 11,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      letterSpacing: '0.08em',
+                      color: theme === t.key ? 'var(--ink)' : 'var(--ink-soft)',
+                      background: 'var(--paper)',
+                      textAlign: 'center',
+                      fontWeight: theme === t.key ? 500 : 400,
+                    }}>
+                      {t.label}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Data folder section */}
+            <div style={{ borderBottom: '1px solid var(--line)', paddingBottom: 24, marginBottom: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 3 }}>Data folder</div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-soft)', lineHeight: 1.5 }}>
+                    The folder where your threads and notes are stored on disk.
+                  </div>
+                </div>
+                <button
+                  className="btn btn-soft"
+                  style={{ fontSize: 12, gap: 6, flexShrink: 0 }}
+                  onClick={pickDirectory}
+                >
+                  <IconFolder size={12} /> Change folder
+                </button>
+              </div>
+
+              <div style={{
+                marginTop: 12, display: 'flex', alignItems: 'center', gap: 8,
+                padding: '7px 10px', borderRadius: 5,
+                background: 'var(--paper)', border: '1px solid var(--line)',
+                fontSize: 12, fontFamily: 'monospace', color: 'var(--ink-soft)',
+              }}>
+                <IconFolder size={12} />
+                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {dirHandle?.name ?? 'No folder selected'}
+                </span>
+              </div>
+
+              {dirHandle && (
+                <div className="font-mono" style={{ marginTop: 8, paddingLeft: 2, lineHeight: 1.6, fontSize: 10.5, color: 'var(--ink-faint)' }}>
+                  threads/<br />
+                  ├─ {threads[0]?.filename || '—'}<br />
+                  {threads.length > 1 && `└─ +${threads.length - 1} more`}
+                </div>
+              )}
+            </div>
+
+            {/* Rescan section */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 3 }}>Refresh data</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-soft)', lineHeight: 1.5 }}>
+                  Re-read all files from the data folder to pick up external changes.
+                </div>
+              </div>
+              <button
+                className="btn btn-soft"
+                style={{ fontSize: 12, gap: 6, flexShrink: 0 }}
+                onClick={() => { rescanDirectory(); setShowSettings(false); }}
+                disabled={loading || !dirHandle}
+              >
+                <IconUpdate size={12} style={loading ? { opacity: 0.4 } : {}} />
+                {loading ? 'Loading…' : 'Rescan now'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
+  );
+}
+
+function TheDailySidebar({ rituals, streaks, doneDates }) {
+  const { toggleRitual } = useApp();
+  const t = today();
+  const doneCount = rituals.filter(r => doneDates[r.id]?.has(t)).length;
+
+  return (
+    <div
+      style={{
+        margin: '0 4px',
+        padding: '10px 10px 8px',
+        border: '1.25px solid var(--ink)',
+        borderRadius: 8,
+        background: 'var(--paper)',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+        <span className="font-sketch" style={{ fontSize: 13 }}>The Daily</span>
+        <span className="font-mono" style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
+          {doneCount}/{rituals.length}
+        </span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {rituals.map(r => {
+          const done = doneDates[r.id]?.has(t);
+          const streak = computeStreak(streaks[r.id] || []);
+          return (
+            <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span
+                className={`sk-check ${done ? 'done' : ''}`}
+                style={{ width: 12, height: 12, flexShrink: 0, cursor: 'pointer' }}
+                onClick={() => toggleRitual(r.id)}
+              />
+              <span
+                style={{
+                  fontSize: 11.5,
+                  color: done ? 'var(--ink-soft)' : 'var(--ink)',
+                  textDecoration: done ? 'line-through' : 'none',
+                  flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}
+              >
+                {r.label}
+              </span>
+              {streak > 0 && (
+                <span className="font-hand" style={{ fontSize: 11, color: streak >= 14 ? 'var(--accent)' : 'var(--ink-soft)', flexShrink: 0 }}>
+                  {streak}d
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
