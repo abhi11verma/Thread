@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useApp } from '../store/AppContext.jsx';
 import { FollowupLine, Tag, Person, StateChip } from './atoms/Chips.jsx';
-import { IconChev, IconClock, IconEdit, IconCheck } from './atoms/Icons.jsx';
+import { IconChev, IconClock, IconCheck, IconArrowUp } from './atoms/Icons.jsx';
 import { nanoid } from '../lib/nanoid.js';
 import { today } from '../lib/utils.js';
 
@@ -21,50 +23,84 @@ function detectType(text, forceDecision) {
   return 'NOTE';
 }
 
-// Render text with @mention, [[date]], and [[thread-slug]] highlighted
-function RichText({ text, style }) {
+// Process a plain string for @mentions, [[dates]], [[thread-slugs]]
+function useInlineTokens() {
   const { threads, openThread } = useApp();
-  // Split on @mentions, [[YYYY-MM-DD]] dates, and [[thread-slug]] links
-  const parts = text.split(/(@\w+|\[\[\d{4}-\d{2}-\d{2}\]\]|\[\[[a-z][a-z0-9-]+\]\])/g);
+  return function renderInline(str, keyPrefix = '') {
+    const parts = str.split(/(@\w+|\[\[\d{4}-\d{2}-\d{2}\]\]|\[\[[a-z][a-z0-9-]+\]\])/g);
+    return parts.map((part, i) => {
+      const key = keyPrefix + i;
+      if (part.startsWith('@')) {
+        return <span key={key} style={{ color: 'var(--accent)', fontWeight: 500 }}>{part}</span>;
+      }
+      if (/^\[\[\d{4}-\d{2}-\d{2}\]\]$/.test(part)) {
+        return (
+          <span key={key} style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.88em', color: 'var(--ink-soft)', background: 'var(--paper-3)', borderRadius: 3, padding: '0 3px' }}>
+            {part.slice(2, -2)}
+          </span>
+        );
+      }
+      if (/^\[\[[a-z][a-z0-9-]+\]\]$/.test(part)) {
+        const slug = part.slice(2, -2);
+        const linked = threads.find(t => t.id === slug);
+        return (
+          <button
+            key={key}
+            onClick={e => { e.stopPropagation(); if (linked) openThread(linked.id); }}
+            style={{
+              display: 'inline', background: 'none', border: 'none', padding: '0 1px',
+              fontFamily: 'inherit', fontSize: 'inherit',
+              color: linked ? 'var(--accent)' : 'var(--ink-faint)',
+              textDecoration: linked ? 'underline' : 'line-through',
+              textDecorationStyle: 'dotted',
+              cursor: linked ? 'pointer' : 'default',
+              fontStyle: linked ? 'normal' : 'italic',
+            }}
+            title={linked ? `Open: ${linked.title}` : `Thread not found: ${slug}`}
+          >
+            {linked ? linked.title : slug}
+          </button>
+        );
+      }
+      return part;
+    });
+  };
+}
+
+// Render markdown with @mention / [[date]] / [[thread-slug]] support inside text nodes
+function RichText({ text, style }) {
+  const renderInline = useInlineTokens();
+
+  // Apply inline token processing to string children inside any markdown node
+  function processChildren(children, keyPrefix = '') {
+    return Array.isArray(children)
+      ? children.map((child, i) =>
+          typeof child === 'string' ? renderInline(child, `${keyPrefix}-${i}`) : child
+        )
+      : typeof children === 'string'
+      ? renderInline(children, keyPrefix)
+      : children;
+  }
+
+  const mdComponents = {
+    p:      ({ children }) => <p style={{ margin: '0 0 6px 0' }}>{processChildren(children, 'p')}</p>,
+    strong: ({ children }) => <strong>{processChildren(children, 's')}</strong>,
+    em:     ({ children }) => <em>{processChildren(children, 'e')}</em>,
+    li:     ({ children }) => <li>{processChildren(children, 'li')}</li>,
+    a:      ({ href, children }) => <a href={href} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>{children}</a>,
+    code:   ({ inline, children }) => inline
+      ? <code style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.88em', background: 'var(--paper-3)', borderRadius: 3, padding: '0 4px' }}>{children}</code>
+      : <pre style={{ background: 'var(--paper-3)', borderRadius: 8, padding: '10px 12px', overflowX: 'auto', fontSize: 12 }}><code style={{ fontFamily: 'JetBrains Mono, monospace' }}>{children}</code></pre>,
+    ul: ({ children }) => <ul style={{ margin: '4px 0', paddingLeft: 18 }}>{children}</ul>,
+    ol: ({ children }) => <ol style={{ margin: '4px 0', paddingLeft: 18 }}>{children}</ol>,
+  };
+
   return (
-    <span style={style}>
-      {parts.map((part, i) => {
-        if (part.startsWith('@')) {
-          return <span key={i} style={{ color: 'var(--accent)', fontWeight: 500 }}>{part}</span>;
-        }
-        if (/^\[\[\d{4}-\d{2}-\d{2}\]\]$/.test(part)) {
-          return (
-            <span key={i} style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.88em', color: 'var(--ink-soft)', background: 'var(--paper-2)', borderRadius: 3, padding: '0 3px' }}>
-              {part.slice(2, -2)}
-            </span>
-          );
-        }
-        if (/^\[\[[a-z][a-z0-9-]+\]\]$/.test(part)) {
-          const slug = part.slice(2, -2);
-          const linked = threads.find(t => t.id === slug);
-          return (
-            <button
-              key={i}
-              onClick={e => { e.stopPropagation(); if (linked) openThread(linked.id); }}
-              style={{
-                display: 'inline',
-                background: 'none', border: 'none', padding: '0 1px',
-                fontFamily: 'inherit', fontSize: 'inherit',
-                color: linked ? 'var(--accent)' : 'var(--ink-faint)',
-                textDecoration: linked ? 'underline' : 'line-through',
-                textDecorationStyle: 'dotted',
-                cursor: linked ? 'pointer' : 'default',
-                fontStyle: linked ? 'normal' : 'italic',
-              }}
-              title={linked ? `Open: ${linked.title}` : `Thread not found: ${slug}`}
-            >
-              {linked ? linked.title : slug}
-            </button>
-          );
-        }
-        return part;
-      })}
-    </span>
+    <div style={{ ...style, lineHeight: 1.6 }}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+        {text}
+      </ReactMarkdown>
+    </div>
   );
 }
 
@@ -167,10 +203,10 @@ export default function ThreadView() {
     if (slugSuggestions.length > 0) {
       if (e.key === 'ArrowDown') { e.preventDefault(); setSlugIdx(i => Math.min(i + 1, slugSuggestions.length - 1)); return; }
       if (e.key === 'ArrowUp') { e.preventDefault(); setSlugIdx(i => Math.max(i - 1, 0)); return; }
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); completeSugg(slugSuggestions[slugIdx]); return; }
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); completeSugg(slugSuggestions[slugIdx]); return; }
       if (e.key === 'Escape') { setSlugQuery(null); return; }
     }
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); }
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); handleSubmit(); }
     if (e.key === 'Escape') { setText(''); setForceDecision(false); }
   }
 
@@ -180,14 +216,14 @@ export default function ThreadView() {
   }
 
   // Group blocks by date for the feed
-  const grouped = [];
-  let lastDate = null;
+  const dateGroups = [];
   for (const b of thread.blocks) {
-    if (b.date !== lastDate) {
-      grouped.push({ type: 'date', date: b.date });
-      lastDate = b.date;
+    const last = dateGroups[dateGroups.length - 1];
+    if (last && last.date === b.date) {
+      last.blocks.push(b);
+    } else {
+      dateGroups.push({ date: b.date, blocks: [b] });
     }
-    grouped.push({ type: 'block', block: b });
   }
 
   return (
@@ -236,14 +272,19 @@ export default function ThreadView() {
 
         {/* Composer */}
         <div
-          className="sk-card"
-          style={{ padding: '10px 12px', marginBottom: 24, background: 'var(--paper-2)', position: 'relative' }}
+          style={{
+            background: 'var(--paper-2)',
+            borderRadius: 14,
+            padding: '12px 14px',
+            marginBottom: 32,
+            position: 'relative',
+          }}
         >
           {slugSuggestions.length > 0 && (
             <div style={{
               position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
-              background: 'var(--paper)', border: '1px solid var(--line-strong)',
-              borderRadius: 6, boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+              background: 'var(--paper-2)', border: '1px solid var(--line)',
+              borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
               zIndex: 100, overflowY: 'auto', maxHeight: 'calc(5 * 52px)',
             }}>
               {slugSuggestions.map((t, i) => (
@@ -252,7 +293,7 @@ export default function ThreadView() {
                   onMouseDown={e => { e.preventDefault(); completeSugg(t); }}
                   style={{
                     padding: '7px 12px', cursor: 'pointer',
-                    background: i === slugIdx ? 'var(--paper-2)' : 'transparent',
+                    background: i === slugIdx ? 'var(--paper-3)' : 'transparent',
                     display: 'flex', flexDirection: 'column', gap: 1,
                     borderBottom: i < slugSuggestions.length - 1 ? '1px solid var(--line)' : 'none',
                   }}
@@ -267,8 +308,8 @@ export default function ThreadView() {
             ref={textareaRef}
             className="sk-input"
             style={{
-              minHeight: 64, resize: 'none', fontSize: 14, fontFamily: 'inherit',
-              lineHeight: 1.55, border: 'none', background: 'transparent', padding: 0,
+              minHeight: 72, resize: 'none', fontSize: 14, fontFamily: 'inherit',
+              lineHeight: 1.6, border: 'none', background: 'transparent', padding: 0,
               width: '100%', outline: 'none',
             }}
             placeholder={'Add a note… @name for follow-ups · [[YYYY-MM-DD]] due date · [[thread-slug]] to link'}
@@ -276,29 +317,26 @@ export default function ThreadView() {
             onChange={handleTextChange}
             onKeyDown={handleKey}
           />
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--line)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {/* Auto-detected type indicator */}
-              <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
+              <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
                 {text.trim()
                   ? detectedType === 'FOLLOWUP'
-                    ? <><span style={{ color: 'var(--accent)' }}>↳ follow-up</span>{parseEntry(text).who && <> · <span style={{ color: 'var(--accent)' }}>@{parseEntry(text).who}</span></>}{parseEntry(text).due && <> · <span style={{ fontFamily: 'monospace' }}>{parseEntry(text).due}</span></>}</>
+                    ? <><span style={{ color: 'var(--accent)' }}>follow-up</span>{parseEntry(text).who && <> · <span style={{ color: 'var(--accent)' }}>@{parseEntry(text).who}</span></>}{parseEntry(text).due && <> · <span style={{ fontFamily: 'monospace' }}>{parseEntry(text).due}</span></>}</>
                     : detectedType === 'DECISION'
-                    ? <span style={{ color: 'var(--ink)' }}>↳ decision</span>
-                    : <span>↳ note</span>
-                  : <span style={{ opacity: 0.5 }}>shift+enter for newline · enter to add</span>
+                    ? <span style={{ color: 'var(--ink-soft)' }}>decision</span>
+                    : <span>note</span>
+                  : <span>enter for newline · ⌘↵ to post</span>
                 }
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <button
-                className="btn btn-soft"
                 style={{
                   fontSize: 11, padding: '2px 8px',
-                  borderStyle: forceDecision ? 'solid' : 'dashed',
-                  background: forceDecision ? 'var(--ink)' : 'transparent',
-                  color: forceDecision ? 'var(--paper)' : 'var(--ink-soft)',
-                  borderColor: forceDecision ? 'var(--ink)' : 'var(--line-strong)',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: forceDecision ? 'var(--accent)' : 'var(--ink-faint)',
+                  fontFamily: 'inherit',
                 }}
                 onClick={() => setForceDecision(d => !d)}
                 title="Mark as decision"
@@ -306,46 +344,48 @@ export default function ThreadView() {
                 decision
               </button>
               <button
-                className="btn btn-primary"
-                style={{ fontSize: 12, padding: '3px 12px' }}
+                style={{
+                  width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+                  background: text.trim() ? 'var(--ink)' : 'var(--paper-3)',
+                  color: text.trim() ? 'var(--paper)' : 'var(--ink-faint)',
+                  border: 'none', cursor: text.trim() ? 'pointer' : 'default',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'background 0.15s',
+                }}
                 onClick={handleSubmit}
                 disabled={!text.trim()}
+                title="Post (Enter)"
               >
-                Add <span className="kbd" style={{ marginLeft: 4 }}>⏎</span>
+                <IconArrowUp size={14} strokeWidth={2} />
               </button>
             </div>
           </div>
         </div>
 
         {/* Feed */}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {thread.blocks.length === 0 && (
-            <div style={{ padding: '24px 0', color: 'var(--ink-soft)', fontSize: 13 }}>
+            <div style={{ padding: '24px 0', color: 'var(--ink-faint)', fontSize: 13 }}>
               Nothing here yet — start writing above.
             </div>
           )}
-          {grouped.map((item, idx) => {
-            if (item.type === 'date') {
-              return (
-                <div
-                  key={'d-' + item.date + idx}
-                  className="font-mono"
-                  style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginTop: idx === 0 ? 0 : 18, marginBottom: 6, letterSpacing: '0.04em' }}
-                >
-                  {item.date}
-                </div>
-              );
-            }
-            const b = item.block;
-            return (
-              <FeedEntry
-                key={b.id || idx}
-                b={b}
-                onToggle={b.type === 'FOLLOWUP' ? () => cycleFollowupState(b.id, b.state) : null}
-                onEdit={text => updateBlock(thread.id, b.id, { text })}
-              />
-            );
-          })}
+          {dateGroups.map(group => (
+            <div key={group.date}>
+              <div className="font-mono" style={{ fontSize: 10, color: 'var(--ink-faint)', letterSpacing: '0.06em', marginBottom: 6, paddingLeft: 2 }}>
+                {group.date}
+              </div>
+              <div style={{ background: 'var(--paper-2)', borderRadius: 12, padding: '2px 4px' }}>
+                {group.blocks.map((b, i) => (
+                  <FeedEntry
+                    key={b.id || i}
+                    b={b}
+                    onToggle={b.type === 'FOLLOWUP' ? () => cycleFollowupState(b.id, b.state) : null}
+                    onEdit={text => updateBlock(thread.id, b.id, { text })}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
 
         <div
@@ -455,11 +495,24 @@ function FeedEntry({ b, onToggle, onEdit }) {
       .slice(0, 8);
   }, [slugQuery, threads]);
 
+  // Auto-resize textarea to content height, capped at viewport
+  useEffect(() => {
+    if (!isEditing || !editRef.current) return;
+    const ta = editRef.current;
+    ta.style.height = 'auto';
+    ta.style.height = `${ta.scrollHeight}px`;
+  }, [isEditing, editText]);
+
   function startEdit() {
+    if (!onEdit) return;
     setEditText(b.text);
     setIsEditing(true);
     setSlugQuery(null);
-    setTimeout(() => editRef.current?.focus(), 0);
+    setTimeout(() => {
+      if (!editRef.current) return;
+      editRef.current.focus();
+      editRef.current.setSelectionRange(editRef.current.value.length, editRef.current.value.length);
+    }, 0);
   }
 
   function saveEdit() {
@@ -499,67 +552,56 @@ function FeedEntry({ b, onToggle, onEdit }) {
     if (slugSuggestions.length > 0) {
       if (e.key === 'ArrowDown') { e.preventDefault(); setSlugIdx(i => Math.min(i + 1, slugSuggestions.length - 1)); return; }
       if (e.key === 'ArrowUp') { e.preventDefault(); setSlugIdx(i => Math.max(i - 1, 0)); return; }
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); completeEditSugg(slugSuggestions[slugIdx]); return; }
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); completeEditSugg(slugSuggestions[slugIdx]); return; }
       if (e.key === 'Escape') { setSlugQuery(null); return; }
     }
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEdit(); }
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); saveEdit(); }
     if (e.key === 'Escape') { setIsEditing(false); }
   }
 
-  const editButton = onEdit && !isEditing && hovered && (
-    <button
-      className="btn btn-ghost"
-      style={{ padding: '1px 4px', opacity: 0.5, flexShrink: 0 }}
-      onClick={e => { e.stopPropagation(); startEdit(); }}
-      title="Edit"
-    >
-      <IconEdit size={12} />
-    </button>
-  );
-
-  const editArea = isEditing && (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
-      <div style={{ position: 'relative' }}>
-        {slugSuggestions.length > 0 && (
-          <div style={{
-            position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 2,
-            background: 'var(--paper)', border: '1px solid var(--line-strong)',
-            borderRadius: 6, boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-            zIndex: 100, overflowY: 'auto', maxHeight: 'calc(5 * 52px)',
-          }}>
-            {slugSuggestions.map((t, i) => (
-              <div
-                key={t.id}
-                onMouseDown={e => { e.preventDefault(); completeEditSugg(t); }}
-                style={{
-                  padding: '7px 12px', cursor: 'pointer',
-                  background: i === slugIdx ? 'var(--paper-2)' : 'transparent',
-                  display: 'flex', flexDirection: 'column', gap: 1,
-                  borderBottom: i < slugSuggestions.length - 1 ? '1px solid var(--line)' : 'none',
-                }}
-              >
-                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)' }}>{t.title}</span>
-                <span style={{ fontSize: 11, color: 'var(--ink-faint)', fontFamily: 'monospace' }}>{t.id}</span>
-              </div>
-            ))}
-          </div>
-        )}
-        <textarea
-          ref={editRef}
-          className="sk-input"
-          style={{
-            fontSize: 14, lineHeight: 1.5, resize: 'none', minHeight: 56,
-            padding: '4px 6px', borderRadius: 4, width: '100%',
-            border: '1px solid var(--line-strong)', background: 'var(--paper-2)',
-          }}
-          value={editText}
-          onChange={handleEditTextChange}
-          onKeyDown={handleEditKey}
-          onBlur={saveEdit}
-        />
-      </div>
-      <div style={{ display: 'flex', gap: 6, fontSize: 11, color: 'var(--ink-soft)' }}>
-        <span>enter to save · esc to cancel</span>
+  const editArea = (
+    <div style={{ position: 'relative' }}>
+      {slugSuggestions.length > 0 && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 2,
+          background: 'var(--paper-2)', border: '1px solid var(--line)',
+          borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+          zIndex: 100, overflowY: 'auto', maxHeight: 'calc(5 * 52px)',
+        }}>
+          {slugSuggestions.map((t, i) => (
+            <div
+              key={t.id}
+              onMouseDown={e => { e.preventDefault(); completeEditSugg(t); }}
+              style={{
+                padding: '7px 12px', cursor: 'pointer',
+                background: i === slugIdx ? 'var(--paper-3)' : 'transparent',
+                display: 'flex', flexDirection: 'column', gap: 1,
+                borderBottom: i < slugSuggestions.length - 1 ? '1px solid var(--line)' : 'none',
+              }}
+            >
+              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)' }}>{t.title}</span>
+              <span style={{ fontSize: 11, color: 'var(--ink-faint)', fontFamily: 'monospace' }}>{t.id}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <textarea
+        ref={editRef}
+        className="sk-input"
+        style={{
+          fontSize: 14, lineHeight: 1.6, resize: 'none',
+          padding: 0, width: '100%',
+          border: 'none', background: 'transparent', outline: 'none',
+          overflow: 'hidden',
+          maxHeight: 'calc(100vh - 160px)',
+        }}
+        value={editText}
+        onChange={handleEditTextChange}
+        onKeyDown={handleEditKey}
+        onBlur={saveEdit}
+      />
+      <div style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginTop: 4 }}>
+        ⌘↵ to save · esc to cancel
       </div>
     </div>
   );
@@ -568,7 +610,7 @@ function FeedEntry({ b, onToggle, onEdit }) {
     const closed = b.state === 'closed' || b.state === 'checked';
     return (
       <div
-        style={{ display: 'flex', gap: 10, padding: '5px 0', borderBottom: '1px solid var(--line)' }}
+        style={{ display: 'flex', gap: 10, padding: '7px 10px', marginBottom: 2, borderRadius: 8, background: hovered ? 'var(--paper-3)' : 'transparent', transition: 'background 0.1s' }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
@@ -581,14 +623,16 @@ function FeedEntry({ b, onToggle, onEdit }) {
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           {isEditing ? editArea : (
-            <RichText
-              text={b.text}
-              style={{
-                fontSize: 14, lineHeight: 1.5,
-                textDecoration: closed ? 'line-through' : 'none',
-                color: closed ? 'var(--ink-soft)' : 'var(--ink)',
-              }}
-            />
+            <div onClick={startEdit} style={{ cursor: onEdit ? 'text' : 'default' }}>
+              <RichText
+                text={b.text}
+                style={{
+                  fontSize: 14, lineHeight: 1.5,
+                  textDecoration: closed ? 'line-through' : 'none',
+                  color: closed ? 'var(--ink-soft)' : 'var(--ink)',
+                }}
+              />
+            </div>
           )}
           {(b.who || b.due) && !isEditing && (
             <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
@@ -604,7 +648,6 @@ function FeedEntry({ b, onToggle, onEdit }) {
             </div>
           )}
         </div>
-        {editButton}
       </div>
     );
   }
@@ -613,18 +656,23 @@ function FeedEntry({ b, onToggle, onEdit }) {
     return (
       <div
         style={{
-          borderLeft: '3px solid var(--accent)',
-          padding: '6px 0 6px 10px', marginBottom: 2, borderBottom: '1px solid var(--line)',
+          borderLeft: '2px solid var(--accent)',
+          padding: '6px 0 6px 12px', marginBottom: 2,
           display: 'flex', gap: 6,
+          borderRadius: '0 8px 8px 0',
+          background: hovered ? 'var(--paper-3)' : 'transparent', transition: 'background 0.1s',
         }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 10.5, color: 'var(--accent)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.06em', marginBottom: 3, textTransform: 'uppercase' }}>decided</div>
-          {isEditing ? editArea : <RichText text={b.text} style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--ink)' }} />}
+          {isEditing ? editArea : (
+            <div onClick={startEdit} style={{ cursor: onEdit ? 'text' : 'default' }}>
+              <RichText text={b.text} style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--ink)' }} />
+            </div>
+          )}
         </div>
-        {editButton}
       </div>
     );
   }
@@ -632,14 +680,17 @@ function FeedEntry({ b, onToggle, onEdit }) {
   // NOTE, QUESTION, UPDATE
   return (
     <div
-      style={{ padding: '5px 0', borderBottom: '1px solid var(--line)', display: 'flex', gap: 6, alignItems: 'flex-start' }}
+      style={{ padding: '7px 10px', marginBottom: 2, borderRadius: 8, display: 'flex', gap: 6, alignItems: 'flex-start', background: hovered ? 'var(--paper-3)' : 'transparent', transition: 'background 0.1s' }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       <div style={{ flex: 1, minWidth: 0 }}>
-        {isEditing ? editArea : <RichText text={b.text} style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--ink-2)' }} />}
+        {isEditing ? editArea : (
+          <div onClick={startEdit} style={{ cursor: onEdit ? 'text' : 'default' }}>
+            <RichText text={b.text} style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--ink-2)' }} />
+          </div>
+        )}
       </div>
-      {editButton}
     </div>
   );
 }
