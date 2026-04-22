@@ -55,21 +55,42 @@
   --warn-soft:  #FDF5E0;
 }
 
+/* ── Black ── */
+.black {
+  --paper:      #000000;
+  --paper-2:    #0A0A0A;
+  --paper-3:    #141414;
+  --ink:        #ECECEC;
+  --ink-2:      #C8C8C8;
+  --ink-soft:   #7A7A7A;
+  --ink-faint:  #3E3E3E;
+  --line:       #1C1C1C;
+  --line-strong:#282828;
+  --accent:     #A8C7FF;
+  --accent-soft:#0D1626;
+  --warn:       #FFB340;
+  --warn-soft:  #1C1200;
+  --radius:     14px;
+  --radius-sm:  8px;
+}
+
 /* ── Dark ── */
 .dark {
-  --paper:      #18140F;
-  --paper-2:    #211C16;
-  --paper-3:    #2A2419;
+  --paper:      #1A1714;
+  --paper-2:    #222019;
+  --paper-3:    #2C2924;
   --ink:        #F0EBE3;
-  --ink-2:      #D4CFC8;
+  --ink-2:      #D0CBC4;
   --ink-soft:   #8A8279;
-  --ink-faint:  #58534D;
-  --line:       #332E28;
-  --line-strong:#4A4440;
+  --ink-faint:  #52504A;
+  --line:       #2C2926;
+  --line-strong:#3C3A35;
   --accent:     #D4784A;
   --accent-soft:#2A1A10;
   --warn:       #C47030;
   --warn-soft:  #251508;
+  --radius:     14px;
+  --radius-sm:  8px;
 }
 
 * { box-sizing: border-box; }
@@ -120,8 +141,10 @@ html, body, #root {
   border-radius: var(--radius);
   box-shadow: 1px 2px 0 rgba(10,10,10,0.03);
 }
-.dark .sk-card { box-shadow: none; }
-.dark .sk-card-soft { box-shadow: none; }
+.dark .sk-card { box-shadow: none; border-color: var(--line); }
+.dark .sk-card-soft { box-shadow: none; background: var(--paper-2); border-color: var(--line); }
+.black .sk-card { box-shadow: none; border-color: var(--line); }
+.black .sk-card-soft { box-shadow: none; background: var(--paper-2); border-color: var(--line-strong); }
 
 /* ── Buttons ── */
 .btn {
@@ -172,52 +195,79 @@ html, body, #root {
 
 .dark .chip-waiting { background: #2A1500; border-color: #8A5820; color: #D4904A; }
 .dark .chip-checked { background: #0A1A0A; border-color: #4A7A48; color: #90C890; }
+.black .chip-waiting { background: #1C1200; border-color: #7A5A10; color: #FFB340; }
+.black .chip-checked { background: #001A04; border-color: #2A6A30; color: #70C870; }
+.black .sk-check { border-color: #3A3A3A; }
+.black .sk-check:hover { border-color: #666; }
+.black .sk-check.done { background: #FFFFFF; border-color: #FFFFFF; }
+.black .sk-check.done::after { border-color: #000000; }
 
 .dark .btn-primary { background: var(--paper-3); color: var(--ink); border-color: var(--line-strong); }
 .dark .btn-primary:hover { opacity: 1; background: #2e2e2c; }
+.black .btn-primary { background: var(--paper-3); color: var(--ink); border-color: var(--line-strong); }
+.black .btn-primary:hover { opacity: 1; background: var(--paper-3); }
 
 /* ── Checkbox ── */
 .sk-check {
-  display: inline-block;
-  width: 16px; height: 16px;
-  border: 1.5px solid var(--ink);
-  border-radius: 3px;
-  vertical-align: -3px;
-  background: var(--paper);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px; height: 18px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 50%;
+  background: transparent;
   position: relative;
   flex-shrink: 0;
   cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
 }
-.sk-check.done { background: var(--ink); }
+.sk-check:hover { border-color: var(--ink-soft); }
+.sk-check.done { background: var(--accent); border-color: var(--accent); }
 .sk-check.done::after {
   content: "";
-  position: absolute; left: 4px; top: 2px;
+  position: absolute; left: 5px; top: 3px;
   width: 5px; height: 9px;
-  border: solid var(--paper);
-  border-width: 0 2px 2px 0;
+  border: solid #fff;
+  border-width: 0 1.5px 1.5px 0;
   transform: rotate(42deg);
 }
+.sk-check.waiting { border-color: var(--warn); border-style: dashed; }
 .sk-check.waiting::after {
-  content: "…";
-  position: absolute; inset: -4px 0 0 2px;
-  font-family: 'Caveat', cursive;
-  font-size: 18px;
-  color: var(--ink);
+  content: "·";
+  font-size: 20px;
+  color: var(--warn);
+  line-height: 0;
+  position: absolute;
+  top: 10px;
 }
 
 /* ── Input ── */
 .sk-input {
-  border: 1.25px solid var(--line-strong);
-  border-radius: 7px;
-  padding: 6px 10px;
+  border: none;
+  border-radius: 9px;
+  padding: 10px 13px;
   font-family: inherit;
-  font-size: 13px;
-  background: var(--paper);
+  font-size: 14px;
+  background: var(--paper-3);
   color: var(--ink);
   width: 100%;
   outline: none;
+  transition: filter 0.15s;
 }
-.sk-input:focus { border-color: var(--ink); }
+.sk-input::placeholder { color: var(--ink-faint); }
+.sk-input:focus { filter: brightness(0.84); }
+
+/* ── Rich input (WYSIWYG wrapper that looks like sk-input) ── */
+.sk-rich-input {
+  border: none;
+  border-radius: 9px;
+  padding: 10px 13px;
+  background: var(--paper-3);
+  width: 100%;
+  cursor: text;
+  transition: filter 0.15s;
+}
+.sk-rich-input:focus-within { filter: brightness(0.84); }
 
 /* ── Divider ── */
 .divider       { height: 1px; background: var(--line); width: 100%; }

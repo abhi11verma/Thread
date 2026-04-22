@@ -38,7 +38,7 @@ export default function Dashboard({ onNewThread, onSearch }) {
     <main
       style={{
         flex: 1, minWidth: 0, overflowY: 'auto',
-        padding: '22px 28px 40px',
+        padding: '28px 36px 48px',
         background: 'var(--paper)',
       }}
     >
@@ -67,7 +67,7 @@ export default function Dashboard({ onNewThread, onSearch }) {
       </div>
 
       {/* ── Two-column body ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: 22 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: 20 }}>
 
         {/* LEFT — Due card */}
         <Card>
@@ -125,7 +125,7 @@ export default function Dashboard({ onNewThread, onSearch }) {
         </Card>
 
         {/* RIGHT — Waiting + Reminders + Decisions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           {waitingFU.length > 0 && (
             <Card>

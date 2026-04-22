@@ -22,10 +22,11 @@ const NAV = [
 ];
 
 const THEMES = [
-  { key: 'warm', label: 'Warm',  bg: '#F2EDE4', accent: '#C4622D', ink: '#1C1916' },
-  { key: 'light', label: 'Light', bg: '#FFFFFF', accent: '#2D4A6B', ink: '#0A0A0A' },
-  { key: 'cool', label: 'Cool',  bg: '#F0F4F8', accent: '#2557C2', ink: '#0D1B2A' },
-  { key: 'dark', label: 'Dark',  bg: '#18140F', accent: '#D4784A', ink: '#F0EBE3' },
+  { key: 'warm',  label: 'Warm',  bg: '#F2EDE4', accent: '#C4622D', ink: '#1C1916' },
+  { key: 'light', label: 'Light', bg: '#FFFFFF',  accent: '#2D4A6B', ink: '#0A0A0A' },
+  { key: 'cool',  label: 'Cool',  bg: '#F0F4F8',  accent: '#2557C2', ink: '#0D1B2A' },
+  { key: 'dark',  label: 'Dark',  bg: '#1A1714',  accent: '#D4784A', ink: '#F0EBE3' },
+  { key: 'black', label: 'Black', bg: '#000000',  accent: '#A8C7FF', ink: '#ECECEC' },
 ];
 
 export default function Sidebar({ theme, setTheme, onNewThread, onAddRitual }) {
@@ -48,10 +49,10 @@ export default function Sidebar({ theme, setTheme, onNewThread, onAddRitual }) {
     <>
     <aside
       style={{
-        width: 240,
+        width: 272,
         borderRight: '1px solid var(--line)',
         background: 'var(--paper-2)',
-        padding: '14px 10px',
+        padding: '14px 12px',
         display: 'flex',
         flexDirection: 'column',
         gap: 14,
@@ -108,8 +109,8 @@ export default function Sidebar({ theme, setTheme, onNewThread, onAddRitual }) {
       {/* Pinned threads */}
       {pinnedThreads.length > 0 && (
         <>
-          <div className="kicker" style={{ padding: '0 8px', marginTop: 2 }}>Threads — active</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 4px' }}>
+          <div className="kicker" style={{ padding: '0 4px', marginTop: 2 }}>Threads — active</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {pinnedThreads.map(t => {
               const isActive = section === 'thread' && t.id === activeThreadId;
               const openCount = t.blocks.filter(b => b.type === 'FOLLOWUP' && (b.state === 'open' || b.state === 'waiting')).length;
@@ -119,24 +120,37 @@ export default function Sidebar({ theme, setTheme, onNewThread, onAddRitual }) {
                   key={t.id}
                   onClick={() => openThread(t.id)}
                   style={{
-                    textAlign: 'left', padding: '5px 8px',
-                    border: 'none',
-                    background: isActive ? 'var(--paper)' : 'transparent',
-                    borderLeft: isActive ? '2px solid var(--ink)' : '2px solid transparent',
-                    borderRadius: 4, cursor: 'pointer', fontFamily: 'inherit',
+                    textAlign: 'left',
+                    padding: '9px 11px',
+                    border: isActive ? '1px solid var(--line-strong)' : '1px solid var(--line)',
+                    background: isActive ? 'var(--paper)' : 'var(--paper-3)',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    transition: 'background 0.1s',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 8, color: t.status === 'active' ? 'var(--ink)' : 'var(--ink-faint)' }}>●</span>
-                    <span style={{ fontSize: 13, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                    <span style={{
+                      fontSize: 13.5, fontWeight: 500,
+                      color: 'var(--ink)',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      flex: 1,
+                    }}>
                       {t.title}
                     </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 1, paddingLeft: 14 }}>
-                    <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{openCount} open</span>
-                    {waitingCount > 0 && (
-                      <span style={{ fontSize: 11, color: 'var(--warn)' }}>· {waitingCount} waiting</span>
+                    {openCount > 0 && (
+                      <span style={{
+                        fontSize: 10.5, fontFamily: 'JetBrains Mono, monospace',
+                        color: waitingCount > 0 ? 'var(--warn)' : 'var(--ink-soft)',
+                        flexShrink: 0,
+                      }}>
+                        {openCount}
+                      </span>
                     )}
+                  </div>
+                  <div style={{ marginTop: 4, fontSize: 11, color: 'var(--ink-soft)' }}>
+                    {openCount === 0 ? 'no open loops' : `${openCount} open${waitingCount > 0 ? ` · ${waitingCount} waiting` : ''}`}
                   </div>
                 </button>
               );

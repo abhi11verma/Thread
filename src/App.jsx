@@ -20,7 +20,7 @@ function AppShell() {
 
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('thread-theme');
-    if (saved && ['warm', 'light', 'cool', 'dark'].includes(saved)) return saved;
+    if (saved && ['warm', 'light', 'cool', 'dark', 'black'].includes(saved)) return saved;
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'warm';
   });
   const [showNewThread, setShowNewThread] = useState(false);
@@ -29,7 +29,7 @@ function AppShell() {
   const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
-    document.documentElement.classList.remove('dark', 'light', 'cool');
+    document.documentElement.classList.remove('dark', 'light', 'cool', 'black');
     if (theme !== 'warm') document.documentElement.classList.add(theme);
     localStorage.setItem('thread-theme', theme);
   }, [theme]);
