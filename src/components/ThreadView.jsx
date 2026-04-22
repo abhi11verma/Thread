@@ -105,7 +105,7 @@ function RichText({ text, style }) {
 }
 
 export default function ThreadView() {
-  const { threads, activeThreadId, addBlock, updateBlock, updateThread, openThread } = useApp();
+  const { threads, activeThreadId, addBlock, updateBlock, updateThread, openThread, setSection } = useApp();
   const thread = threads.find(t => t.id === activeThreadId);
 
   const [text, setText] = useState('');
@@ -245,7 +245,11 @@ export default function ThreadView() {
         {/* Breadcrumb */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, justifyContent: 'space-between' }}>
           <div className="font-mono" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--ink-soft)' }}>
-            <span>threads</span><IconChev size={11} /><span>{thread.kind}</span><IconChev size={11} /><span>{thread.status}</span>
+            <span
+              style={{ cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2 }}
+              onClick={() => setSection('threads')}
+            >threads</span>
+            <IconChev size={11} /><span>{thread.kind}</span><IconChev size={11} /><span>{thread.status}</span>
           </div>
           <button
             className="btn btn-soft"
