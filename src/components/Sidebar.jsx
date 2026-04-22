@@ -40,7 +40,7 @@ function themePreview(t) {
 }
 
 export default function Sidebar({ themeKey, setThemeKey, onNewThread, onAddRitual, width = 272 }) {
-  const { section, activeThreadId, threads, scratches, rituals, streaks, doneDates, setSection, openThread, getAllFollowups, rescanDirectory, pickDirectory, dirHandle, loading } = useApp();
+  const { section, activeThreadId, activeTag, threads, scratches, rituals, streaks, doneDates, setSection, setActiveTag, openThread, getAllFollowups, rescanDirectory, pickDirectory, dirHandle, loading } = useApp();
   const [showSettings, setShowSettings] = useState(false);
   const [customThemes, setCustomThemes] = useState(() => getCustomThemes());
   const [uploadError, setUploadError] = useState('');
@@ -217,7 +217,13 @@ export default function Sidebar({ themeKey, setThemeKey, onNewThread, onAddRitua
         <>
           <div className="kicker" style={{ padding: '0 8px' }}>Tags</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: '0 6px' }}>
-            {allTags.map(t => <Tag key={t} t={t} />)}
+            {allTags.map(t => (
+              <Tag
+                key={t}
+                t={t}
+                onClick={() => setActiveTag(activeTag === t ? null : t)}
+              />
+            ))}
           </div>
         </>
       )}
