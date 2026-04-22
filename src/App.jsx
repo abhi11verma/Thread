@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AppProvider, useApp } from './store/AppContext.jsx';
 import DirectoryPicker from './DirectoryPicker.jsx';
 import Sidebar from './components/Sidebar.jsx';
@@ -28,6 +28,11 @@ function AppShell() {
   const [newThreadTitle, setNewThreadTitle] = useState('');
   const [showAddRitual, setShowAddRitual] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem('thread-sidebar-width');
+    return saved ? parseInt(saved, 10) : 272;
+  });
+  const sidebarWidthRef = useRef(sidebarWidth);
 
   useEffect(() => {
     const theme = findTheme(themeKey) ?? findTheme('warm');
@@ -55,6 +60,24 @@ function AppShell() {
     setShowNewThread(true);
   }
 
+  function startSidebarDrag(e) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = sidebarWidthRef.current;
+    function onMove(e) {
+      const next = Math.min(480, Math.max(180, startWidth + (e.clientX - startX)));
+      sidebarWidthRef.current = next;
+      setSidebarWidth(next);
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      localStorage.setItem('thread-sidebar-width', sidebarWidthRef.current.toString());
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
   if (!dirHandle) return <DirectoryPicker />;
 
   return (
@@ -72,6 +95,21 @@ function AppShell() {
         setThemeKey={setThemeKey}
         onNewThread={() => openNewThread()}
         onAddRitual={() => setShowAddRitual(true)}
+        width={sidebarWidth}
+      />
+
+      <div
+        onMouseDown={startSidebarDrag}
+        style={{
+          width: 4,
+          cursor: 'col-resize',
+          flexShrink: 0,
+          background: 'transparent',
+          transition: 'background 0.15s',
+          zIndex: 10,
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.opacity = '0.35'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.opacity = '1'; }}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
