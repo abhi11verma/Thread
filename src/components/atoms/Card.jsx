@@ -65,14 +65,14 @@ export function DashFU({ fu, thread, pinged, stale, onOpen, onCheck }) {
   return (
     <div
       style={{
-        display: 'flex', alignItems: 'center', gap: 12,
+        display: 'flex', alignItems: 'flex-start', gap: 12,
         padding: '11px 0', borderBottom: '1px solid var(--line)',
       }}
     >
-      <span className={`sk-check ${stateClass}`} onClick={onCheck} style={{ cursor: 'pointer' }} />
+      <span className={`sk-check ${stateClass}`} onClick={onCheck} style={{ cursor: 'pointer', marginTop: 3, flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 14 }}>{fu.text}</span>
+          <span style={{ fontSize: 15 }}>{fu.text}</span>
           {stale && <span className="chip chip-waiting" style={{ fontSize: 10 }}>stale</span>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
