@@ -1,0 +1,46 @@
+{
+  "key": "carbon",
+  "label": "Carbon",
+  "meta": {
+    "dark": true,
+    "description": "Carbon black with gunmetal surfaces and ivory text"
+  },
+  "tokens": {
+    "global": {
+      "radius": "10px",
+      "radius-sm": "6px"
+    },
+    "surface": {
+      "paper": "#1E1F1F",
+      "paper-2": "#000000",
+      "paper-3": "#3D3E3E"
+    },
+    "text": {
+      "ink": "#F5FBEF",
+      "ink-2": "#D0D4CB",
+      "ink-soft": "#ADADAD",
+      "ink-faint": "#626262"
+    },
+    "border": {
+      "line": "#3D3E3E",
+      "line-strong": "#5A5B5B"
+    },
+    "accent": {
+      "accent": "#F5FBEF",
+      "accent-soft": "#1A2018"
+    },
+    "warn": {
+      "warn": "#D4A84A",
+      "warn-soft": "#1E1800"
+    },
+    "thread": {
+      "chip-waiting-bg": "#1E1800",
+      "chip-waiting-border": "#6A5020",
+      "chip-waiting-text": "#D4A84A",
+      "chip-checked-bg": "#041408",
+      "chip-checked-border": "#2E5A34",
+      "chip-checked-text": "#74B87A"
+    },
+    "ritual": {}
+  }
+}
