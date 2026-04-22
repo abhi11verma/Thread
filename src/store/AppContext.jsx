@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef } from 'react';
 import { openDirectory, restoreDirectory, ensureDir, listFiles, listRootFiles, readFile, writeFile } from '../lib/fs.js';
 import { parseThread, serializeThread, parseRituals, serializeRituals, parseScratch, serializeScratch, generateSlug, computeStreak } from '../lib/markdown.js';
 import { nanoid } from '../lib/nanoid.js';
@@ -30,6 +30,7 @@ function reducer(state, action) {
     case 'LOAD_ALL':     return { ...state, threads: action.threads, rituals: action.rituals, streaks: action.streaks, doneDates: action.doneDates, scratches: action.scratches, loading: false };
     case 'SET_SECTION':  return { ...state, section: action.section, activeThreadId: action.threadId ?? state.activeThreadId };
     case 'OPEN_THREAD':  return { ...state, section: 'thread', activeThreadId: action.threadId };
+    case 'RESTORE_NAV':  return { ...state, section: action.section, activeThreadId: action.activeThreadId ?? null };
     case 'UPDATE_THREAD': {
       const threads = state.threads.map(t => t.id === action.thread.id ? action.thread : t);
       return { ...state, threads };
@@ -43,6 +44,8 @@ function reducer(state, action) {
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, INIT);
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   // ── Load all data from disk ─────────────────────────────────────────────
   const loadAll = useCallback(async (handle) => {
@@ -136,13 +139,31 @@ export function AppProvider({ children }) {
     await loadAll(dirHandle);
   }, [state, loadAll]);
 
+  // ── Browser history ─────────────────────────────────────────────────────
+  useEffect(() => {
+    window.history.replaceState({ section: INIT.section, activeThreadId: INIT.activeThreadId }, '');
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = (e) => {
+      if (e.state?.section) {
+        dispatch({ type: 'RESTORE_NAV', section: e.state.section, activeThreadId: e.state.activeThreadId });
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   // ── Navigation ──────────────────────────────────────────────────────────
   const setSection = useCallback((section, threadId) => {
+    const resolvedThreadId = threadId ?? stateRef.current.activeThreadId;
     dispatch({ type: 'SET_SECTION', section, threadId });
+    window.history.pushState({ section, activeThreadId: resolvedThreadId }, '');
   }, []);
 
   const openThread = useCallback((threadId) => {
     dispatch({ type: 'OPEN_THREAD', threadId });
+    window.history.pushState({ section: 'thread', activeThreadId: threadId }, '');
   }, []);
 
   // ── Create thread ───────────────────────────────────────────────────────
@@ -155,6 +176,7 @@ export function AppProvider({ children }) {
       const thread = { id: slug, slug, filename: `${slug}.md`, ...meta, blocks: [] };
       dispatch({ type: 'ADD_THREAD', thread });
       dispatch({ type: 'OPEN_THREAD', threadId: slug });
+      window.history.pushState({ section: 'thread', activeThreadId: slug }, '');
       return thread;
     }
     const slug = generateSlug(title) + '-' + nanoid(4);
@@ -165,6 +187,7 @@ export function AppProvider({ children }) {
     const thread = { id: slug, slug, filename: `${slug}.md`, ...meta, blocks };
     dispatch({ type: 'ADD_THREAD', thread });
     dispatch({ type: 'OPEN_THREAD', threadId: slug });
+    window.history.pushState({ section: 'thread', activeThreadId: slug }, '');
     return thread;
   }, [state]);
 
