@@ -1,0 +1,235 @@
+{
+  "version": 1,
+  "themes": [
+    {
+      "key": "warm",
+      "label": "Warm",
+      "meta": {
+        "dark": false,
+        "description": "Warm parchment tones with terracotta accents"
+      },
+      "tokens": {
+        "global": {
+          "radius": "10px",
+          "radius-sm": "6px"
+        },
+        "surface": {
+          "paper": "#F2EDE4",
+          "paper-2": "#EAE4D8",
+          "paper-3": "#DDD7CB"
+        },
+        "text": {
+          "ink": "#1C1916",
+          "ink-2": "#302C27",
+          "ink-soft": "#78706A",
+          "ink-faint": "#ADA79E"
+        },
+        "border": {
+          "line": "#D0C9BE",
+          "line-strong": "#B5AFA6"
+        },
+        "accent": {
+          "accent": "#C4622D",
+          "accent-soft": "#F5E8DF"
+        },
+        "warn": {
+          "warn": "#9B4A10",
+          "warn-soft": "#FBF0E8"
+        },
+        "thread": {
+          "chip-waiting-bg": "#FBF0E8",
+          "chip-waiting-border": "#C4884A",
+          "chip-waiting-text": "#7A3A0A",
+          "chip-checked-bg": "#EAF0E8",
+          "chip-checked-border": "#7A9E76",
+          "chip-checked-text": "#2A4A26"
+        },
+        "ritual": {}
+      }
+    },
+    {
+      "key": "light",
+      "label": "Light",
+      "meta": {
+        "dark": false,
+        "description": "Clean neutral light for focused work"
+      },
+      "tokens": {
+        "global": {
+          "radius": "10px",
+          "radius-sm": "6px"
+        },
+        "surface": {
+          "paper": "#FFFFFF",
+          "paper-2": "#F8F8F7",
+          "paper-3": "#F0F0EE"
+        },
+        "text": {
+          "ink": "#0A0A0A",
+          "ink-2": "#2A2A2A",
+          "ink-soft": "#6B6B6B",
+          "ink-faint": "#A8A8A8"
+        },
+        "border": {
+          "line": "#D9D9D6",
+          "line-strong": "#B8B8B4"
+        },
+        "accent": {
+          "accent": "#2D4A6B",
+          "accent-soft": "#EAF0F6"
+        },
+        "warn": {
+          "warn": "#8A5A2B",
+          "warn-soft": "#FFF8EA"
+        },
+        "thread": {
+          "chip-waiting-bg": "#FFF8EA",
+          "chip-waiting-border": "#C4884A",
+          "chip-waiting-text": "#7A3A0A",
+          "chip-checked-bg": "#EAF0E8",
+          "chip-checked-border": "#7A9E76",
+          "chip-checked-text": "#2A4A26"
+        },
+        "ritual": {}
+      }
+    },
+    {
+      "key": "cool",
+      "label": "Cool",
+      "meta": {
+        "dark": false,
+        "description": "Slate blue-gray with bright blue accents"
+      },
+      "tokens": {
+        "global": {
+          "radius": "10px",
+          "radius-sm": "6px"
+        },
+        "surface": {
+          "paper": "#F0F4F8",
+          "paper-2": "#E6EDF5",
+          "paper-3": "#D8E2ED"
+        },
+        "text": {
+          "ink": "#0D1B2A",
+          "ink-2": "#1E2F42",
+          "ink-soft": "#5E7590",
+          "ink-faint": "#96ABBE"
+        },
+        "border": {
+          "line": "#C4D2E0",
+          "line-strong": "#A4B8CC"
+        },
+        "accent": {
+          "accent": "#2557C2",
+          "accent-soft": "#E6EEFE"
+        },
+        "warn": {
+          "warn": "#7B5A14",
+          "warn-soft": "#FDF5E0"
+        },
+        "thread": {
+          "chip-waiting-bg": "#FDF5E0",
+          "chip-waiting-border": "#C4884A",
+          "chip-waiting-text": "#7A3A0A",
+          "chip-checked-bg": "#EAF0E8",
+          "chip-checked-border": "#7A9E76",
+          "chip-checked-text": "#2A4A26"
+        },
+        "ritual": {}
+      }
+    },
+    {
+      "key": "dark",
+      "label": "Dark",
+      "meta": {
+        "dark": true,
+        "description": "Warm dark tones with amber accents"
+      },
+      "tokens": {
+        "global": {
+          "radius": "14px",
+          "radius-sm": "8px"
+        },
+        "surface": {
+          "paper": "#1A1714",
+          "paper-2": "#222019",
+          "paper-3": "#2C2924"
+        },
+        "text": {
+          "ink": "#F0EBE3",
+          "ink-2": "#D0CBC4",
+          "ink-soft": "#8A8279",
+          "ink-faint": "#52504A"
+        },
+        "border": {
+          "line": "#2C2926",
+          "line-strong": "#3C3A35"
+        },
+        "accent": {
+          "accent": "#D4784A",
+          "accent-soft": "#2A1A10"
+        },
+        "warn": {
+          "warn": "#C47030",
+          "warn-soft": "#251508"
+        },
+        "thread": {
+          "chip-waiting-bg": "#2A1500",
+          "chip-waiting-border": "#8A5820",
+          "chip-waiting-text": "#D4904A",
+          "chip-checked-bg": "#0A1A0A",
+          "chip-checked-border": "#4A7A48",
+          "chip-checked-text": "#90C890"
+        },
+        "ritual": {}
+      }
+    },
+    {
+      "key": "black",
+      "label": "Black",
+      "meta": {
+        "dark": true,
+        "description": "Pure black with cool blue accents"
+      },
+      "tokens": {
+        "global": {
+          "radius": "14px",
+          "radius-sm": "8px"
+        },
+        "surface": {
+          "paper": "#000000",
+          "paper-2": "#0A0A0A",
+          "paper-3": "#141414"
+        },
+        "text": {
+          "ink": "#ECECEC",
+          "ink-2": "#C8C8C8",
+          "ink-soft": "#7A7A7A",
+          "ink-faint": "#3E3E3E"
+        },
+        "border": {
+          "line": "#1C1C1C",
+          "line-strong": "#282828"
+        },
+        "accent": {
+          "accent": "#A8C7FF",
+          "accent-soft": "#0D1626"
+        },
+        "warn": {
+          "warn": "#FFB340",
+          "warn-soft": "#1C1200"
+        },
+        "thread": {
+          "chip-waiting-bg": "#1C1200",
+          "chip-waiting-border": "#7A5A10",
+          "chip-waiting-text": "#FFB340",
+          "chip-checked-bg": "#001A04",
+          "chip-checked-border": "#2A6A30",
+          "chip-checked-text": "#70C870"
+        },
+        "ritual": {}
+      }
+    }
+  ]
+}

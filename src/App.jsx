@@ -14,13 +14,14 @@ import SearchModal from './components/SearchModal.jsx';
 import ScratchView from './components/ScratchView.jsx';
 import ArchiveView from './components/ArchiveView.jsx';
 import RitualsView from './components/RitualsView.jsx';
+import { applyTheme, findTheme, getActiveThemeKey } from './lib/theme.js';
 
 function AppShell() {
   const { dirHandle, section, loading } = useApp();
 
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('thread-theme');
-    if (saved && ['warm', 'light', 'cool', 'dark', 'black'].includes(saved)) return saved;
+  const [themeKey, setThemeKey] = useState(() => {
+    const saved = getActiveThemeKey();
+    if (saved) return saved;
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'warm';
   });
   const [showNewThread, setShowNewThread] = useState(false);
@@ -29,10 +30,10 @@ function AppShell() {
   const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
-    document.documentElement.classList.remove('dark', 'light', 'cool', 'black');
-    if (theme !== 'warm') document.documentElement.classList.add(theme);
-    localStorage.setItem('thread-theme', theme);
-  }, [theme]);
+    const theme = findTheme(themeKey) ?? findTheme('warm');
+    applyTheme(theme);
+    localStorage.setItem('thread-theme', themeKey);
+  }, [themeKey]);
 
   useEffect(() => {
     function onKey(e) {
@@ -67,8 +68,8 @@ function AppShell() {
       }}
     >
       <Sidebar
-        theme={theme}
-        setTheme={setTheme}
+        themeKey={themeKey}
+        setThemeKey={setThemeKey}
         onNewThread={() => openNewThread()}
         onAddRitual={() => setShowAddRitual(true)}
       />

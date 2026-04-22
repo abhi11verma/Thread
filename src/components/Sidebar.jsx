@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useApp } from '../store/AppContext.jsx';
 import {
   IconSpark, IconInbox, IconThread, IconCheck, IconPeople,
@@ -8,6 +8,10 @@ import {
 import { Tag } from './atoms/Chips.jsx';
 import { today } from '../lib/utils.js';
 import { computeStreak } from '../lib/markdown.js';
+import {
+  getBuiltinThemes, getCustomThemes, getAllThemes,
+  saveCustomTheme, removeCustomTheme, findTheme, validateTheme,
+} from '../lib/theme.js';
 
 const NAV = [
   { key: 'dashboard', label: 'Dashboard', Icon: IconSpark },
@@ -21,21 +25,33 @@ const NAV = [
   { key: 'rituals',   label: 'Rituals',     Icon: IconRepeat },
 ];
 
-const THEMES = [
-  { key: 'warm',  label: 'Warm',  bg: '#F2EDE4', accent: '#C4622D', ink: '#1C1916' },
-  { key: 'light', label: 'Light', bg: '#FFFFFF',  accent: '#2D4A6B', ink: '#0A0A0A' },
-  { key: 'cool',  label: 'Cool',  bg: '#F0F4F8',  accent: '#2557C2', ink: '#0D1B2A' },
-  { key: 'dark',  label: 'Dark',  bg: '#1A1714',  accent: '#D4784A', ink: '#F0EBE3' },
-  { key: 'black', label: 'Black', bg: '#000000',  accent: '#A8C7FF', ink: '#ECECEC' },
-];
+function themePreview(t) {
+  const flat = {};
+  if (t.tokens) {
+    for (const group of Object.values(t.tokens)) {
+      if (group && typeof group === 'object') Object.assign(flat, group);
+    }
+  }
+  return {
+    bg:     flat['paper']  ?? '#fff',
+    accent: flat['accent'] ?? '#000',
+    ink:    flat['ink']    ?? '#000',
+  };
+}
 
-export default function Sidebar({ theme, setTheme, onNewThread, onAddRitual }) {
+export default function Sidebar({ themeKey, setThemeKey, onNewThread, onAddRitual }) {
   const { section, activeThreadId, threads, scratches, rituals, streaks, doneDates, setSection, openThread, getAllFollowups, rescanDirectory, pickDirectory, dirHandle, loading } = useApp();
   const [showSettings, setShowSettings] = useState(false);
+  const [customThemes, setCustomThemes] = useState(() => getCustomThemes());
+  const [uploadError, setUploadError] = useState('');
+  const fileInputRef = useRef(null);
 
   const allTags = [...new Set(threads.flatMap(t => t.tags))];
   const pinnedThreads = threads.filter(t => t.status === 'active').slice(0, 6);
   const t0 = today();
+
+  const builtinThemes = getBuiltinThemes();
+  const allThemes = [...builtinThemes, ...customThemes];
 
   function countFor(key) {
     if (key === 'today') return getAllFollowups().filter(f => f.due === t0 || f.due === 'today').length || null;
@@ -43,6 +59,43 @@ export default function Sidebar({ theme, setTheme, onNewThread, onAddRitual }) {
     if (key === 'fu') return getAllFollowups().filter(f => f.state === 'open' || f.state === 'waiting').length || null;
     if (key === 'scratch') return scratches.filter(s => s.threadId === 'unassigned').length || null;
     return null;
+  }
+
+  function handleThemeUpload(e) {
+    const file = e.target.files?.[0];
+    if (!fileInputRef.current) return;
+    fileInputRef.current.value = '';
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        const err = validateTheme(parsed);
+        if (err) { setUploadError(err); return; }
+
+        // Prevent overwriting built-in theme keys
+        const builtinKeys = new Set(builtinThemes.map(t => t.key));
+        if (builtinKeys.has(parsed.key)) {
+          parsed.key = `${parsed.key}-custom`;
+        }
+
+        saveCustomTheme(parsed);
+        const updated = getCustomThemes();
+        setCustomThemes(updated);
+        setUploadError('');
+        setThemeKey(parsed.key);
+      } catch {
+        setUploadError('Invalid JSON file');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function handleRemoveCustomTheme(key) {
+    removeCustomTheme(key);
+    setCustomThemes(getCustomThemes());
+    if (themeKey === key) setThemeKey('warm');
   }
 
   return (
@@ -239,60 +292,107 @@ export default function Sidebar({ theme, setTheme, onNewThread, onAddRitual }) {
               <div style={{ fontSize: 12, color: 'var(--ink-soft)', marginBottom: 12 }}>
                 Choose a colour tone for the interface.
               </div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                {THEMES.map(t => (
-                  <button
-                    key={t.key}
-                    onClick={() => setTheme(t.key)}
-                    style={{
-                      flex: 1,
-                      border: theme === t.key ? `2px solid var(--ink)` : `1.5px solid var(--line-strong)`,
-                      borderRadius: 8,
-                      padding: 0,
-                      cursor: 'pointer',
-                      overflow: 'hidden',
-                      background: 'transparent',
-                      outline: 'none',
-                    }}
-                    title={t.label}
-                  >
-                    {/* Swatch */}
-                    <div style={{
-                      height: 44,
-                      background: t.bg,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 5,
-                    }}>
-                      <span style={{
-                        width: 10, height: 10,
-                        borderRadius: '50%',
-                        background: t.accent,
-                        display: 'inline-block',
-                      }} />
-                      <span style={{
-                        fontFamily: 'JetBrains Mono, monospace',
-                        fontSize: 9,
-                        color: t.ink,
-                        letterSpacing: '0.06em',
-                      }}>Aa</span>
+
+              {/* Built-in themes */}
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {allThemes.map(t => {
+                  const { bg, accent, ink } = themePreview(t);
+                  const isActive = themeKey === t.key;
+                  const isCustom = !builtinThemes.find(b => b.key === t.key);
+                  return (
+                    <div key={t.key} style={{ position: 'relative' }}>
+                      <button
+                        onClick={() => setThemeKey(t.key)}
+                        title={t.meta?.description || t.label}
+                        style={{
+                          width: 72,
+                          border: isActive ? `2px solid var(--ink)` : `1.5px solid var(--line-strong)`,
+                          borderRadius: 8,
+                          padding: 0,
+                          cursor: 'pointer',
+                          overflow: 'hidden',
+                          background: 'transparent',
+                          outline: 'none',
+                        }}
+                      >
+                        <div style={{
+                          height: 44,
+                          background: bg,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 5,
+                        }}>
+                          <span style={{ width: 10, height: 10, borderRadius: '50%', background: accent, display: 'inline-block' }} />
+                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: ink, letterSpacing: '0.06em' }}>Aa</span>
+                        </div>
+                        <div style={{
+                          padding: '5px 0',
+                          fontSize: 11,
+                          fontFamily: 'JetBrains Mono, monospace',
+                          letterSpacing: '0.08em',
+                          color: isActive ? 'var(--ink)' : 'var(--ink-soft)',
+                          background: 'var(--paper)',
+                          textAlign: 'center',
+                          fontWeight: isActive ? 500 : 400,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {t.label}
+                        </div>
+                      </button>
+                      {isCustom && (
+                        <button
+                          onClick={() => handleRemoveCustomTheme(t.key)}
+                          title="Remove theme"
+                          style={{
+                            position: 'absolute', top: -6, right: -6,
+                            width: 16, height: 16,
+                            borderRadius: '50%',
+                            background: 'var(--ink)',
+                            color: 'var(--paper)',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 9, lineHeight: 1,
+                            padding: 0,
+                          }}
+                        >
+                          ×
+                        </button>
+                      )}
                     </div>
-                    {/* Label */}
-                    <div style={{
-                      padding: '5px 0',
-                      fontSize: 11,
-                      fontFamily: 'JetBrains Mono, monospace',
-                      letterSpacing: '0.08em',
-                      color: theme === t.key ? 'var(--ink)' : 'var(--ink-soft)',
-                      background: 'var(--paper)',
-                      textAlign: 'center',
-                      fontWeight: theme === t.key ? 500 : 400,
-                    }}>
-                      {t.label}
-                    </div>
-                  </button>
-                ))}
+                  );
+                })}
+              </div>
+
+              {/* Upload custom theme */}
+              <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <label
+                  style={{ cursor: 'pointer' }}
+                  title="Upload a theme JSON file"
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".json,application/json"
+                    style={{ display: 'none' }}
+                    onChange={handleThemeUpload}
+                  />
+                  <span className="btn btn-soft" style={{ fontSize: 12, pointerEvents: 'none' }}>
+                    + Upload theme
+                  </span>
+                </label>
+                {uploadError && (
+                  <span style={{ fontSize: 11, color: 'var(--warn)', fontFamily: 'JetBrains Mono, monospace' }}>
+                    {uploadError}
+                  </span>
+                )}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 11, color: 'var(--ink-faint)', lineHeight: 1.5 }}>
+                Theme files are JSON with <code style={{ fontFamily: 'JetBrains Mono, monospace' }}>key</code>, <code style={{ fontFamily: 'JetBrains Mono, monospace' }}>label</code>, and <code style={{ fontFamily: 'JetBrains Mono, monospace' }}>tokens</code> fields.
+                Any built-in theme file can be used as a starting point.
               </div>
             </div>
 

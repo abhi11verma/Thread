@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Design tokens ── */
+/* ── Design tokens (warm theme defaults — overridden by JS via applyTheme) ── */
 :root {
   --paper:      #F2EDE4;
   --paper-2:    #EAE4D8;
@@ -19,78 +19,14 @@
   --warn-soft:  #FBF0E8;
   --radius:     10px;
   --radius-sm:  6px;
-}
 
-/* ── Light (neutral) ── */
-.light {
-  --paper:      #FFFFFF;
-  --paper-2:    #F8F8F7;
-  --paper-3:    #F0F0EE;
-  --ink:        #0A0A0A;
-  --ink-2:      #2A2A2A;
-  --ink-soft:   #6B6B6B;
-  --ink-faint:  #A8A8A8;
-  --line:       #D9D9D6;
-  --line-strong:#B8B8B4;
-  --accent:     #2D4A6B;
-  --accent-soft:#EAF0F6;
-  --warn:       #8A5A2B;
-  --warn-soft:  #FFF8EA;
-}
-
-/* ── Cool (slate blue-gray) ── */
-.cool {
-  --paper:      #F0F4F8;
-  --paper-2:    #E6EDF5;
-  --paper-3:    #D8E2ED;
-  --ink:        #0D1B2A;
-  --ink-2:      #1E2F42;
-  --ink-soft:   #5E7590;
-  --ink-faint:  #96ABBE;
-  --line:       #C4D2E0;
-  --line-strong:#A4B8CC;
-  --accent:     #2557C2;
-  --accent-soft:#E6EEFE;
-  --warn:       #7B5A14;
-  --warn-soft:  #FDF5E0;
-}
-
-/* ── Black ── */
-.black {
-  --paper:      #000000;
-  --paper-2:    #0A0A0A;
-  --paper-3:    #141414;
-  --ink:        #ECECEC;
-  --ink-2:      #C8C8C8;
-  --ink-soft:   #7A7A7A;
-  --ink-faint:  #3E3E3E;
-  --line:       #1C1C1C;
-  --line-strong:#282828;
-  --accent:     #A8C7FF;
-  --accent-soft:#0D1626;
-  --warn:       #FFB340;
-  --warn-soft:  #1C1200;
-  --radius:     14px;
-  --radius-sm:  8px;
-}
-
-/* ── Dark ── */
-.dark {
-  --paper:      #1A1714;
-  --paper-2:    #222019;
-  --paper-3:    #2C2924;
-  --ink:        #F0EBE3;
-  --ink-2:      #D0CBC4;
-  --ink-soft:   #8A8279;
-  --ink-faint:  #52504A;
-  --line:       #2C2926;
-  --line-strong:#3C3A35;
-  --accent:     #D4784A;
-  --accent-soft:#2A1A10;
-  --warn:       #C47030;
-  --warn-soft:  #251508;
-  --radius:     14px;
-  --radius-sm:  8px;
+  /* Thread-specific component tokens */
+  --chip-waiting-bg:     #FBF0E8;
+  --chip-waiting-border: #C4884A;
+  --chip-waiting-text:   #7A3A0A;
+  --chip-checked-bg:     #EAF0E8;
+  --chip-checked-border: #7A9E76;
+  --chip-checked-text:   #2A4A26;
 }
 
 * { box-sizing: border-box; }
@@ -141,10 +77,10 @@ html, body, #root {
   border-radius: var(--radius);
   box-shadow: 1px 2px 0 rgba(10,10,10,0.03);
 }
-.dark .sk-card { box-shadow: none; border-color: var(--line); }
-.dark .sk-card-soft { box-shadow: none; background: var(--paper-2); border-color: var(--line); }
-.black .sk-card { box-shadow: none; border-color: var(--line); }
-.black .sk-card-soft { box-shadow: none; background: var(--paper-2); border-color: var(--line-strong); }
+
+/* Dark-mode structural overrides — toggled via data-dark attribute on <html> */
+[data-dark] .sk-card      { box-shadow: none; border-color: var(--line); }
+[data-dark] .sk-card-soft { box-shadow: none; background: var(--paper-2); border-color: var(--line-strong); }
 
 /* ── Buttons ── */
 .btn {
@@ -170,6 +106,9 @@ html, body, #root {
 .btn-ghost { border-color: transparent; }
 .btn-ghost:hover { background: var(--paper-3); }
 
+[data-dark] .btn-primary       { background: var(--paper-3); color: var(--ink); border-color: var(--line-strong); }
+[data-dark] .btn-primary:hover { opacity: 1; background: var(--paper-2); }
+
 /* ── Chip / Badge ── */
 .chip {
   display: inline-flex;
@@ -183,29 +122,23 @@ html, body, #root {
   line-height: 1.6;
   white-space: nowrap;
 }
-.chip-tag  { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--ink-2); border-color: var(--line-strong); }
+.chip-tag    { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--ink-2); border-color: var(--line-strong); }
 .chip-person { background: var(--paper-3); }
-.chip-open    { background: var(--paper); border-color: var(--ink); }
-.chip-waiting { background: var(--warn-soft); border-color: #C4884A; color: #7A3A0A; }
-.chip-checked { background: #EAF0E8; border-color: #7A9E76; color: #2A4A26; }
+.chip-open   { background: var(--paper); border-color: var(--ink); }
+.chip-waiting {
+  background: var(--chip-waiting-bg);
+  border-color: var(--chip-waiting-border);
+  color: var(--chip-waiting-text);
+}
+.chip-checked {
+  background: var(--chip-checked-bg);
+  border-color: var(--chip-checked-border);
+  color: var(--chip-checked-text);
+}
 .chip-closed  { background: var(--paper-3); border-color: var(--ink-faint); color: var(--ink-soft); text-decoration: line-through; }
 .chip-decided { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .chip-accent  { background: var(--accent); color: #FDF8F4; border-color: var(--accent); }
 .chip-ghost   { border-color: var(--line-strong); color: var(--ink-soft); }
-
-.dark .chip-waiting { background: #2A1500; border-color: #8A5820; color: #D4904A; }
-.dark .chip-checked { background: #0A1A0A; border-color: #4A7A48; color: #90C890; }
-.black .chip-waiting { background: #1C1200; border-color: #7A5A10; color: #FFB340; }
-.black .chip-checked { background: #001A04; border-color: #2A6A30; color: #70C870; }
-.black .sk-check { border-color: #3A3A3A; }
-.black .sk-check:hover { border-color: #666; }
-.black .sk-check.done { background: #FFFFFF; border-color: #FFFFFF; }
-.black .sk-check.done::after { border-color: #000000; }
-
-.dark .btn-primary { background: var(--paper-3); color: var(--ink); border-color: var(--line-strong); }
-.dark .btn-primary:hover { opacity: 1; background: #2e2e2c; }
-.black .btn-primary { background: var(--paper-3); color: var(--ink); border-color: var(--line-strong); }
-.black .btn-primary:hover { opacity: 1; background: var(--paper-3); }
 
 /* ── Checkbox ── */
 .sk-check {
