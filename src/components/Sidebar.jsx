@@ -39,7 +39,7 @@ function themePreview(t) {
   };
 }
 
-export default function Sidebar({ themeKey, setThemeKey, onNewThread, onAddRitual }) {
+export default function Sidebar({ themeKey, setThemeKey, onNewThread, onAddRitual, width = 272 }) {
   const { section, activeThreadId, threads, scratches, rituals, streaks, doneDates, setSection, openThread, getAllFollowups, rescanDirectory, pickDirectory, dirHandle, loading } = useApp();
   const [showSettings, setShowSettings] = useState(false);
   const [customThemes, setCustomThemes] = useState(() => getCustomThemes());
@@ -102,7 +102,7 @@ export default function Sidebar({ themeKey, setThemeKey, onNewThread, onAddRitua
     <>
     <aside
       style={{
-        width: 272,
+        width,
         borderRight: '1px solid var(--line)',
         background: 'var(--paper-2)',
         padding: '14px 12px',

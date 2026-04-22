@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useApp } from '../store/AppContext.jsx';
@@ -113,6 +113,30 @@ export default function ThreadView() {
   const [editingBlockId, setEditingBlockId] = useState(null);
   const editorRef = useRef(null);
 
+  const [rightPaneWidth, setRightPaneWidth] = useState(() => {
+    const saved = localStorage.getItem('thread-right-pane-width');
+    return saved ? parseInt(saved, 10) : 280;
+  });
+  const rightPaneWidthRef = useRef(rightPaneWidth);
+
+  const startRightDrag = useCallback((e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = rightPaneWidthRef.current;
+    function onMove(e) {
+      const next = Math.min(480, Math.max(160, startWidth - (e.clientX - startX)));
+      rightPaneWidthRef.current = next;
+      setRightPaneWidth(next);
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      localStorage.setItem('thread-right-pane-width', rightPaneWidthRef.current.toString());
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, []);
+
   // [[slug]] autocomplete state
   const [slugQuery, setSlugQuery] = useState(null);
   const [slugIdx, setSlugIdx] = useState(0);
@@ -210,16 +234,13 @@ export default function ThreadView() {
   return (
     <main
       style={{
-        flex: 1, minWidth: 0, overflowY: 'auto',
-        padding: '18px 28px 40px',
-        display: 'grid',
-        gridTemplateColumns: '1fr 280px',
-        gap: 24,
+        flex: 1, minWidth: 0, overflowY: 'hidden',
+        display: 'flex',
         background: 'var(--paper)',
       }}
     >
       {/* ── Left: feed + composer ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: '18px 28px 40px', display: 'flex', flexDirection: 'column' }}>
 
         {/* Breadcrumb */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, justifyContent: 'space-between' }}>
@@ -382,8 +403,23 @@ export default function ThreadView() {
         </div>
       </div>
 
+      {/* ── Right rail drag handle ── */}
+      <div
+        onMouseDown={startRightDrag}
+        style={{
+          width: 4,
+          cursor: 'col-resize',
+          flexShrink: 0,
+          background: 'transparent',
+          transition: 'background 0.15s',
+          zIndex: 10,
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.opacity = '0.35'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.opacity = '1'; }}
+      />
+
       {/* ── Right rail ── */}
-      <aside style={{ borderLeft: '1px solid var(--line)', paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 18, overflowY: 'auto' }}>
+      <aside style={{ width: rightPaneWidth, flexShrink: 0, borderLeft: '1px solid var(--line)', paddingLeft: 16, paddingTop: '18px', paddingBottom: '40px', display: 'flex', flexDirection: 'column', gap: 18, overflowY: 'auto' }}>
         <section>
           <div className="kicker" style={{ marginBottom: 6 }}>Open follow-ups</div>
           {openFUs.length === 0 && <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>None open.</div>}
