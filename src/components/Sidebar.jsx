@@ -3,7 +3,7 @@ import { useApp } from '../store/AppContext.jsx';
 import {
   IconSpark, IconInbox, IconThread, IconCheck, IconPeople,
   IconCal, IconArchive, IconPlus, IconSun, IconMoon, IconUpdate, IconNote,
-  IconFolder, IconX, IconGear,
+  IconFolder, IconX, IconGear, IconRepeat,
 } from './atoms/Icons.jsx';
 import { Tag } from './atoms/Chips.jsx';
 import { today } from '../lib/utils.js';
@@ -18,6 +18,7 @@ const NAV = [
   { key: 'scratch',   label: 'Scratch',     Icon: IconNote },
   { key: 'cal',       label: 'Calendar',    Icon: IconCal },
   { key: 'arch',      label: 'Archive',     Icon: IconArchive },
+  { key: 'rituals',   label: 'Rituals',     Icon: IconRepeat },
 ];
 
 const THEMES = [
@@ -27,7 +28,7 @@ const THEMES = [
   { key: 'dark', label: 'Dark',  bg: '#18140F', accent: '#D4784A', ink: '#F0EBE3' },
 ];
 
-export default function Sidebar({ theme, setTheme, onNewThread }) {
+export default function Sidebar({ theme, setTheme, onNewThread, onAddRitual }) {
   const { section, activeThreadId, threads, scratches, rituals, streaks, doneDates, setSection, openThread, getAllFollowups, rescanDirectory, pickDirectory, dirHandle, loading } = useApp();
   const [showSettings, setShowSettings] = useState(false);
 
@@ -157,9 +158,7 @@ export default function Sidebar({ theme, setTheme, onNewThread }) {
       <div style={{ flex: 1 }} />
 
       {/* The Daily — persistent sidebar strip */}
-      {rituals.length > 0 && (
-        <TheDailySidebar rituals={rituals} streaks={streaks} doneDates={doneDates} />
-      )}
+      <TheDailySidebar rituals={rituals} streaks={streaks} doneDates={doneDates} onAdd={onAddRitual} />
 
       {/* Settings */}
       <button
@@ -348,10 +347,12 @@ export default function Sidebar({ theme, setTheme, onNewThread }) {
   );
 }
 
-function TheDailySidebar({ rituals, streaks, doneDates }) {
+function TheDailySidebar({ rituals, streaks, doneDates, onAdd }) {
   const { toggleRitual } = useApp();
   const t = today();
-  const doneCount = rituals.filter(r => doneDates[r.id]?.has(t)).length;
+  const pinned = rituals.filter(r => r.pinned);
+  const displayed = pinned.length > 0 ? pinned : rituals;
+  const doneCount = displayed.filter(r => doneDates[r.id]?.has(t)).length;
 
   return (
     <div
@@ -365,40 +366,61 @@ function TheDailySidebar({ rituals, streaks, doneDates }) {
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
         <span className="font-sketch" style={{ fontSize: 13 }}>The Daily</span>
-        <span className="font-mono" style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
-          {doneCount}/{rituals.length}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {displayed.length > 0 && (
+            <span className="font-mono" style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
+              {doneCount}/{displayed.length}
+            </span>
+          )}
+          <button
+            onClick={onAdd}
+            title="Add ritual"
+            style={{
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              color: 'var(--ink-soft)', padding: '0 2px', lineHeight: 1,
+              fontSize: 15, display: 'flex', alignItems: 'center',
+            }}
+          >
+            <IconPlus size={12} />
+          </button>
+        </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {rituals.map(r => {
-          const done = doneDates[r.id]?.has(t);
-          const streak = computeStreak(streaks[r.id] || []);
-          return (
-            <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span
-                className={`sk-check ${done ? 'done' : ''}`}
-                style={{ width: 12, height: 12, flexShrink: 0, cursor: 'pointer' }}
-                onClick={() => toggleRitual(r.id)}
-              />
-              <span
-                style={{
-                  fontSize: 11.5,
-                  color: done ? 'var(--ink-soft)' : 'var(--ink)',
-                  textDecoration: done ? 'line-through' : 'none',
-                  flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                }}
-              >
-                {r.label}
-              </span>
-              {streak > 0 && (
-                <span className="font-hand" style={{ fontSize: 11, color: streak >= 14 ? 'var(--accent)' : 'var(--ink-soft)', flexShrink: 0 }}>
-                  {streak}d
+      {displayed.length === 0 ? (
+        <div style={{ fontSize: 11, color: 'var(--ink-faint)', padding: '2px 0 2px' }}>
+          No rituals yet — add one to track your daily habits.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {displayed.map(r => {
+            const done = doneDates[r.id]?.has(t);
+            const streak = computeStreak(streaks[r.id] || []);
+            return (
+              <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span
+                  className={`sk-check ${done ? 'done' : ''}`}
+                  style={{ width: 12, height: 12, flexShrink: 0, cursor: 'pointer' }}
+                  onClick={() => toggleRitual(r.id)}
+                />
+                <span
+                  style={{
+                    fontSize: 11.5,
+                    color: done ? 'var(--ink-soft)' : 'var(--ink)',
+                    textDecoration: done ? 'line-through' : 'none',
+                    flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}
+                >
+                  {r.label}
                 </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                {streak > 0 && (
+                  <span className="font-hand" style={{ fontSize: 11, color: streak >= 14 ? 'var(--accent)' : 'var(--ink-soft)', flexShrink: 0 }}>
+                    {streak}d
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

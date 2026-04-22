@@ -101,11 +101,11 @@ export const DEMO_THREADS = [
 ];
 
 export const DEMO_RITUALS = [
-  { id: 'r-1', label: 'Morning journal', detail: '3 lines · what\'s on my mind' },
-  { id: 'r-2', label: 'Meditate', detail: '10 min' },
-  { id: 'r-3', label: 'Read · 20 min', detail: 'current: Thinking in Systems' },
-  { id: 'r-4', label: 'Walk · 30 min', detail: 'any time outside' },
-  { id: 'r-5', label: 'EOD review', detail: 'close loops · plan tomorrow' },
+  { id: 'r-1', label: 'Morning journal', detail: '3 lines · what\'s on my mind', pinned: true },
+  { id: 'r-2', label: 'Meditate', detail: '10 min', pinned: true },
+  { id: 'r-3', label: 'Read · 20 min', detail: 'current: Thinking in Systems', pinned: false },
+  { id: 'r-4', label: 'Walk · 30 min', detail: 'any time outside', pinned: true },
+  { id: 'r-5', label: 'EOD review', detail: 'close loops · plan tomorrow', pinned: false },
 ];
 
 function pastDates(n) {

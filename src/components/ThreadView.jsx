@@ -6,6 +6,7 @@ import { FollowupLine, Tag, Person, StateChip } from './atoms/Chips.jsx';
 import { IconChev, IconClock, IconCheck, IconArrowUp } from './atoms/Icons.jsx';
 import { nanoid } from '../lib/nanoid.js';
 import { today } from '../lib/utils.js';
+import MarkdownEditor from './MarkdownEditor.jsx';
 
 // Parse @mentions and [[dates]] out of raw text
 function parseEntry(text) {
@@ -71,7 +72,6 @@ function useInlineTokens() {
 function RichText({ text, style }) {
   const renderInline = useInlineTokens();
 
-  // Apply inline token processing to string children inside any markdown node
   function processChildren(children, keyPrefix = '') {
     return Array.isArray(children)
       ? children.map((child, i) =>
@@ -110,10 +110,11 @@ export default function ThreadView() {
 
   const [text, setText] = useState('');
   const [forceDecision, setForceDecision] = useState(false);
-  const textareaRef = useRef(null);
+  const [editingBlockId, setEditingBlockId] = useState(null);
+  const editorRef = useRef(null);
 
   // [[slug]] autocomplete state
-  const [slugQuery, setSlugQuery] = useState(null); // null = closed
+  const [slugQuery, setSlugQuery] = useState(null);
   const [slugIdx, setSlugIdx] = useState(0);
 
   const slugSuggestions = useMemo(() => {
@@ -130,7 +131,10 @@ export default function ThreadView() {
     setText('');
     setForceDecision(false);
     setSlugQuery(null);
-    textareaRef.current?.focus();
+    setTimeout(() => {
+      editorRef.current?.clear();
+      editorRef.current?.focus();
+    }, 0);
   }, [activeThreadId]);
 
   if (!thread) {
@@ -145,41 +149,15 @@ export default function ThreadView() {
   const openFUs = thread.blocks.filter(b => b.type === 'FOLLOWUP' && b.state !== 'closed');
   const people = [...new Set(thread.blocks.filter(b => b.type === 'FOLLOWUP' && b.who).map(b => b.who))];
 
-  // Backlinks: other threads that reference [[this-thread-id]] in any block
   const backlinks = useMemo(() => {
     if (!thread) return [];
     const pattern = new RegExp(`\\[\\[${thread.id}\\]\\]`);
     return threads.filter(t => t.id !== thread.id && t.blocks.some(b => pattern.test(b.text)));
   }, [threads, thread?.id]);
 
-  function handleTextChange(e) {
-    const val = e.target.value;
-    const cursor = e.target.selectionStart;
-    setText(val);
-    const before = val.slice(0, cursor);
-    const match = before.match(/\[\[([^\]]*)$/);
-    if (match) {
-      setSlugQuery(match[1]);
-      setSlugIdx(0);
-    } else {
-      setSlugQuery(null);
-    }
-  }
-
-  function completeSugg(thread, suggs) {
-    const ta = textareaRef.current;
-    const cursor = ta.selectionStart;
-    const before = text.slice(0, cursor);
-    const after = text.slice(cursor);
-    const matchStart = before.lastIndexOf('[[');
-    const newText = before.slice(0, matchStart) + `[[${thread.id}]]` + after;
-    setText(newText);
+  function completeSugg(t) {
+    editorRef.current?.insertSlugCompletion(t.id);
     setSlugQuery(null);
-    setTimeout(() => {
-      ta.focus();
-      const pos = matchStart + thread.id.length + 4;
-      ta.setSelectionRange(pos, pos);
-    }, 0);
   }
 
   async function handleSubmit() {
@@ -196,7 +174,8 @@ export default function ThreadView() {
     await addBlock(thread.id, block);
     setText('');
     setForceDecision(false);
-    textareaRef.current?.focus();
+    editorRef.current?.clear();
+    editorRef.current?.focus();
   }
 
   function handleKey(e) {
@@ -204,10 +183,10 @@ export default function ThreadView() {
       if (e.key === 'ArrowDown') { e.preventDefault(); setSlugIdx(i => Math.min(i + 1, slugSuggestions.length - 1)); return; }
       if (e.key === 'ArrowUp') { e.preventDefault(); setSlugIdx(i => Math.max(i - 1, 0)); return; }
       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); completeSugg(slugSuggestions[slugIdx]); return; }
-      if (e.key === 'Escape') { setSlugQuery(null); return; }
+      if (e.key === 'Escape') { e.preventDefault(); setSlugQuery(null); return; }
     }
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); handleSubmit(); }
-    if (e.key === 'Escape') { setText(''); setForceDecision(false); }
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); handleSubmit(); return; }
+    if (e.key === 'Escape') { e.preventDefault(); setText(''); setForceDecision(false); editorRef.current?.clear(); }
   }
 
   function cycleFollowupState(blockId, current) {
@@ -215,7 +194,7 @@ export default function ThreadView() {
     updateBlock(thread.id, blockId, { state: next });
   }
 
-  // Group blocks by date for the feed
+  // Group blocks by date for the feed (most recent first)
   const dateGroups = [];
   for (const b of thread.blocks) {
     const last = dateGroups[dateGroups.length - 1];
@@ -225,6 +204,8 @@ export default function ThreadView() {
       dateGroups.push({ date: b.date, blocks: [b] });
     }
   }
+  dateGroups.reverse();
+  dateGroups.forEach(g => g.blocks.reverse());
 
   return (
     <main
@@ -280,6 +261,7 @@ export default function ThreadView() {
             position: 'relative',
           }}
         >
+          {/* [[slug]] autocomplete dropdown */}
           {slugSuggestions.length > 0 && (
             <div style={{
               position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
@@ -304,19 +286,18 @@ export default function ThreadView() {
               ))}
             </div>
           )}
-          <textarea
-            ref={textareaRef}
-            className="sk-input"
-            style={{
-              minHeight: 72, resize: 'none', fontSize: 14, fontFamily: 'inherit',
-              lineHeight: 1.6, border: 'none', background: 'transparent', padding: 0,
-              width: '100%', outline: 'none',
-            }}
-            placeholder={'Add a note… @name for follow-ups · [[YYYY-MM-DD]] due date · [[thread-slug]] to link'}
-            value={text}
-            onChange={handleTextChange}
+
+          <MarkdownEditor
+            ref={editorRef}
+            initialValue=""
+            onChange={md => { setText(md); }}
+            onSlugQuery={query => { setSlugQuery(query); if (query !== null) setSlugIdx(0); }}
             onKeyDown={handleKey}
+            placeholder="Add a note… @name for follow-ups · [[YYYY-MM-DD]] due date · [[thread-slug]] to link"
+            minHeight={72}
+            autoFocus
           />
+
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
@@ -354,7 +335,7 @@ export default function ThreadView() {
                 }}
                 onClick={handleSubmit}
                 disabled={!text.trim()}
-                title="Post (Enter)"
+                title="Post (⌘↵)"
               >
                 <IconArrowUp size={14} strokeWidth={2} />
               </button>
@@ -376,12 +357,17 @@ export default function ThreadView() {
               </div>
               <div style={{ background: 'var(--paper-2)', borderRadius: 12, padding: '2px 4px' }}>
                 {group.blocks.map((b, i) => (
-                  <FeedEntry
-                    key={b.id || i}
-                    b={b}
-                    onToggle={b.type === 'FOLLOWUP' ? () => cycleFollowupState(b.id, b.state) : null}
-                    onEdit={text => updateBlock(thread.id, b.id, { text })}
-                  />
+                  <div key={b.id || i}>
+                    {i > 0 && <div style={{ height: 1, background: 'var(--line)', margin: '0 8px' }} />}
+                    <FeedEntry
+                      b={b}
+                      onToggle={b.type === 'FOLLOWUP' ? () => cycleFollowupState(b.id, b.state) : null}
+                      onEdit={text => updateBlock(thread.id, b.id, { text })}
+                      isEditing={editingBlockId === b.id}
+                      onStartEdit={() => setEditingBlockId(b.id)}
+                      onStopEdit={() => setEditingBlockId(null)}
+                    />
+                  </div>
                 ))}
               </div>
             </div>
@@ -477,12 +463,12 @@ export default function ThreadView() {
   );
 }
 
-function FeedEntry({ b, onToggle, onEdit }) {
+function FeedEntry({ b, onToggle, onEdit, isEditing, onStartEdit, onStopEdit }) {
   const { threads } = useApp();
-  const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState('');
   const [hovered, setHovered] = useState(false);
-  const editRef = useRef(null);
+  const editEditorRef = useRef(null);
+  const cancelRef = useRef(false);
 
   const [slugQuery, setSlugQuery] = useState(null);
   const [slugIdx, setSlugIdx] = useState(0);
@@ -495,57 +481,24 @@ function FeedEntry({ b, onToggle, onEdit }) {
       .slice(0, 8);
   }, [slugQuery, threads]);
 
-  // Auto-resize textarea to content height, capped at viewport
+  // When isEditing turns on: seed editText. When it turns off: save unless cancelled.
   useEffect(() => {
-    if (!isEditing || !editRef.current) return;
-    const ta = editRef.current;
-    ta.style.height = 'auto';
-    ta.style.height = `${ta.scrollHeight}px`;
-  }, [isEditing, editText]);
-
-  function startEdit() {
-    if (!onEdit) return;
-    setEditText(b.text);
-    setIsEditing(true);
-    setSlugQuery(null);
-    setTimeout(() => {
-      if (!editRef.current) return;
-      editRef.current.focus();
-      editRef.current.setSelectionRange(editRef.current.value.length, editRef.current.value.length);
-    }, 0);
-  }
-
-  function saveEdit() {
-    const trimmed = editText.trim();
-    if (trimmed && trimmed !== b.text) onEdit(trimmed);
-    setIsEditing(false);
-    setSlugQuery(null);
-  }
-
-  function handleEditTextChange(e) {
-    const val = e.target.value;
-    const cursor = e.target.selectionStart;
-    setEditText(val);
-    const before = val.slice(0, cursor);
-    const match = before.match(/\[\[([^\]]*)$/);
-    if (match) { setSlugQuery(match[1]); setSlugIdx(0); }
-    else setSlugQuery(null);
-  }
+    if (isEditing) {
+      setEditText(b.text);
+      cancelRef.current = false;
+      setSlugQuery(null);
+      return;
+    }
+    if (!cancelRef.current) {
+      const trimmed = editText.trim();
+      if (trimmed && trimmed !== b.text) onEdit(trimmed);
+    }
+    cancelRef.current = false;
+  }, [isEditing]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function completeEditSugg(t) {
-    const ta = editRef.current;
-    const cursor = ta.selectionStart;
-    const before = editText.slice(0, cursor);
-    const after = editText.slice(cursor);
-    const matchStart = before.lastIndexOf('[[');
-    const newText = before.slice(0, matchStart) + `[[${t.id}]]` + after;
-    setEditText(newText);
+    editEditorRef.current?.insertSlugCompletion(t.id);
     setSlugQuery(null);
-    setTimeout(() => {
-      ta.focus();
-      const pos = matchStart + t.id.length + 4;
-      ta.setSelectionRange(pos, pos);
-    }, 0);
   }
 
   function handleEditKey(e) {
@@ -553,10 +506,10 @@ function FeedEntry({ b, onToggle, onEdit }) {
       if (e.key === 'ArrowDown') { e.preventDefault(); setSlugIdx(i => Math.min(i + 1, slugSuggestions.length - 1)); return; }
       if (e.key === 'ArrowUp') { e.preventDefault(); setSlugIdx(i => Math.max(i - 1, 0)); return; }
       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); completeEditSugg(slugSuggestions[slugIdx]); return; }
-      if (e.key === 'Escape') { setSlugQuery(null); return; }
+      if (e.key === 'Escape') { e.preventDefault(); setSlugQuery(null); return; }
     }
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); saveEdit(); }
-    if (e.key === 'Escape') { setIsEditing(false); }
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); onStopEdit(); return; }
+    if (e.key === 'Escape') { e.preventDefault(); cancelRef.current = true; onStopEdit(); }
   }
 
   const editArea = (
@@ -585,20 +538,15 @@ function FeedEntry({ b, onToggle, onEdit }) {
           ))}
         </div>
       )}
-      <textarea
-        ref={editRef}
-        className="sk-input"
-        style={{
-          fontSize: 14, lineHeight: 1.6, resize: 'none',
-          padding: 0, width: '100%',
-          border: 'none', background: 'transparent', outline: 'none',
-          overflow: 'hidden',
-          maxHeight: 'calc(100vh - 160px)',
-        }}
-        value={editText}
-        onChange={handleEditTextChange}
+      <MarkdownEditor
+        key={b.id}
+        ref={editEditorRef}
+        initialValue={b.text}
+        onChange={md => setEditText(md)}
+        onSlugQuery={query => { setSlugQuery(query); if (query !== null) setSlugIdx(0); }}
         onKeyDown={handleEditKey}
-        onBlur={saveEdit}
+        minHeight={28}
+        autoFocus
       />
       <div style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginTop: 4 }}>
         ⌘↵ to save · esc to cancel
@@ -623,7 +571,7 @@ function FeedEntry({ b, onToggle, onEdit }) {
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           {isEditing ? editArea : (
-            <div onClick={startEdit} style={{ cursor: onEdit ? 'text' : 'default' }}>
+            <div onClick={() => onStartEdit()} style={{ cursor: onEdit ? 'text' : 'default' }}>
               <RichText
                 text={b.text}
                 style={{
@@ -668,7 +616,7 @@ function FeedEntry({ b, onToggle, onEdit }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 10.5, color: 'var(--accent)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.06em', marginBottom: 3, textTransform: 'uppercase' }}>decided</div>
           {isEditing ? editArea : (
-            <div onClick={startEdit} style={{ cursor: onEdit ? 'text' : 'default' }}>
+            <div onClick={() => onStartEdit()} style={{ cursor: onEdit ? 'text' : 'default' }}>
               <RichText text={b.text} style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--ink)' }} />
             </div>
           )}
@@ -677,7 +625,7 @@ function FeedEntry({ b, onToggle, onEdit }) {
     );
   }
 
-  // NOTE, QUESTION, UPDATE
+  // NOTE
   return (
     <div
       style={{ padding: '7px 10px', marginBottom: 2, borderRadius: 8, display: 'flex', gap: 6, alignItems: 'flex-start', background: hovered ? 'var(--paper-3)' : 'transparent', transition: 'background 0.1s' }}
@@ -686,7 +634,7 @@ function FeedEntry({ b, onToggle, onEdit }) {
     >
       <div style={{ flex: 1, minWidth: 0 }}>
         {isEditing ? editArea : (
-          <div onClick={startEdit} style={{ cursor: onEdit ? 'text' : 'default' }}>
+          <div onClick={() => onStartEdit()} style={{ cursor: onEdit ? 'text' : 'default' }}>
             <RichText text={b.text} style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--ink-2)' }} />
           </div>
         )}

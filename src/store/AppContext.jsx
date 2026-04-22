@@ -183,7 +183,7 @@ export function AppProvider({ children }) {
     if (!thread) return;
     const newBlock = { ...block, date: block.date || today(), id: block.id || (block.type.toLowerCase().slice(0,3) + '-' + nanoid(6)) };
     const updatedThread = { ...thread, blocks: [...thread.blocks, newBlock] };
-    await writeFile(dirHandle, `threads/${thread.filename}`, serializeThread(updatedThread, updatedThread.blocks));
+    await writeFile(dirHandle, thread.inRoot ? thread.filename : `threads/${thread.filename}`, serializeThread(updatedThread, updatedThread.blocks));
     dispatch({ type: 'UPDATE_THREAD', thread: updatedThread });
   }, [state]);
 
@@ -202,7 +202,7 @@ export function AppProvider({ children }) {
     if (!thread) return;
     const blocks = thread.blocks.map(b => b.id === blockId ? { ...b, ...changes } : b);
     const updatedThread = { ...thread, blocks };
-    await writeFile(dirHandle, `threads/${thread.filename}`, serializeThread(updatedThread, blocks));
+    await writeFile(dirHandle, thread.inRoot ? thread.filename : `threads/${thread.filename}`, serializeThread(updatedThread, blocks));
     dispatch({ type: 'UPDATE_THREAD', thread: updatedThread });
   }, [state]);
 
@@ -219,7 +219,7 @@ export function AppProvider({ children }) {
     const thread = threads.find(t => t.id === threadId);
     if (!thread) return;
     const updatedThread = { ...thread, ...changes };
-    await writeFile(dirHandle, `threads/${thread.filename}`, serializeThread(updatedThread, updatedThread.blocks));
+    await writeFile(dirHandle, thread.inRoot ? thread.filename : `threads/${thread.filename}`, serializeThread(updatedThread, updatedThread.blocks));
     dispatch({ type: 'UPDATE_THREAD', thread: updatedThread });
   }, [state]);
 
@@ -255,6 +255,20 @@ export function AppProvider({ children }) {
     const raw = serializeRituals(rituals, newStreaks, newDoneDates);
     await writeFile(dirHandle, 'rituals.md', raw);
     dispatch({ type: 'SET_RITUALS', rituals, streaks: newStreaks, doneDates: newDoneDates });
+  }, [state]);
+
+  // ── Toggle ritual pinned ────────────────────────────────────────────────
+  const toggleRitualPin = useCallback(async (ritualId) => {
+    const { dirHandle, rituals, streaks, doneDates } = state;
+    if (!dirHandle) return;
+    const newRituals = rituals.map(r => r.id === ritualId ? { ...r, pinned: !r.pinned } : r);
+    if (IS_DEMO) {
+      dispatch({ type: 'SET_RITUALS', rituals: newRituals, streaks, doneDates });
+      return;
+    }
+    const raw = serializeRituals(newRituals, streaks, doneDates);
+    await writeFile(dirHandle, 'rituals.md', raw);
+    dispatch({ type: 'SET_RITUALS', rituals: newRituals, streaks, doneDates });
   }, [state]);
 
   // ── Add ritual ──────────────────────────────────────────────────────────
@@ -379,6 +393,7 @@ export function AppProvider({ children }) {
     updateBlock,
     updateThread,
     toggleRitual,
+    toggleRitualPin,
     addRitual,
     addScratch,
     assignScratch,

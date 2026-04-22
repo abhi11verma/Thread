@@ -13,6 +13,7 @@ import AddRitualModal from './components/AddRitualModal.jsx';
 import SearchModal from './components/SearchModal.jsx';
 import ScratchView from './components/ScratchView.jsx';
 import ArchiveView from './components/ArchiveView.jsx';
+import RitualsView from './components/RitualsView.jsx';
 
 function AppShell() {
   const { dirHandle, section, loading } = useApp();
@@ -40,8 +41,8 @@ function AppShell() {
         setShowSearch(s => !s);
         return;
       }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'n' || e.key === 'N')) { e.preventDefault(); setNewThreadTitle(''); setShowNewThread(true); return; }
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      if (e.key === 'n' || e.key === 'N') { setNewThreadTitle(''); setShowNewThread(true); }
       if (e.key === 'Escape') { setShowNewThread(false); setShowAddRitual(false); setShowSearch(false); }
     }
     window.addEventListener('keydown', onKey);
@@ -69,6 +70,7 @@ function AppShell() {
         theme={theme}
         setTheme={setTheme}
         onNewThread={() => openNewThread()}
+        onAddRitual={() => setShowAddRitual(true)}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
@@ -81,6 +83,7 @@ function AppShell() {
         {section === 'scratch'   && <ScratchView />}
         {section === 'cal'       && <StubView label="Calendar" note="Coming soon — shows threads and follow-ups by due date." />}
         {section === 'arch'      && <ArchiveView />}
+        {section === 'rituals'   && <RitualsView />}
       </div>
 
       {showNewThread && <NewThreadModal initialTitle={newThreadTitle} onClose={() => setShowNewThread(false)} />}

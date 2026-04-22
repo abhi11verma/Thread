@@ -75,6 +75,11 @@ function parseFrontmatter(lines) {
   return obj;
 }
 
+// Newlines in block text are stored as literal \n in the file so the
+// line-by-line parser can read them back correctly.
+function encodeText(t) { return t.replace(/\n/g, '\\n'); }
+function decodeText(t) { return t.replace(/\\n/g, '\n'); }
+
 function parseBlockLine(line, date) {
   const m = line.match(/^\[(\w+)\]\s*(.*)/);
   if (!m) return null;
@@ -90,7 +95,7 @@ function parseBlockLine(line, date) {
       else if (p.startsWith('due:')) block.due = p.slice(4);
       else if (p.startsWith('state:')) block.state = p.slice(6);
       else if (p.startsWith('links:')) block.links = p.slice(6).split(',').map(s => s.trim());
-      else if (p) block.text = p;
+      else if (p) block.text = decodeText(p);
     }
     if (!block.id) block.id = 'fu-' + nanoid(6);
     return block;
@@ -101,12 +106,12 @@ function parseBlockLine(line, date) {
     const block = { type, date, id: 'dec-' + nanoid(6), text: '', links: [] };
     for (const p of parts) {
       if (p.startsWith('links:')) block.links = p.slice(6).split(',').map(s => s.trim());
-      else if (p) block.text = p;
+      else if (p) block.text = decodeText(p);
     }
     return block;
   }
 
-  return { type, date, id: type.toLowerCase().slice(0,3) + '-' + nanoid(6), text: rest.trim() };
+  return { type, date, id: type.toLowerCase().slice(0,3) + '-' + nanoid(6), text: decodeText(rest.trim()) };
 }
 
 export function serializeThread(meta, blocks) {
@@ -141,7 +146,7 @@ export function serializeThread(meta, blocks) {
 
 function serializeBlock(b) {
   if (b.type === 'FOLLOWUP') {
-    const parts = [`[FOLLOWUP] id:${b.id}`, b.text];
+    const parts = [`[FOLLOWUP] id:${b.id}`, encodeText(b.text)];
     if (b.who) parts.push(`@${b.who}`);
     if (b.due) parts.push(`due:${b.due}`);
     parts.push(`state:${b.state}`);
@@ -149,11 +154,11 @@ function serializeBlock(b) {
     return parts.join(' | ');
   }
   if (b.type === 'DECISION') {
-    let s = `[DECISION] ${b.text}`;
+    let s = `[DECISION] ${encodeText(b.text)}`;
     if (b.links && b.links.length) s += ` | links:${b.links.join(',')}`;
     return s;
   }
-  return `[${b.type}] ${b.text}`;
+  return `[${b.type}] ${encodeText(b.text)}`;
 }
 
 export function generateSlug(title) {
@@ -186,10 +191,11 @@ export function parseRituals(raw) {
 
     if (type === 'RITUAL') {
       const parts = rest.split('|').map(s => s.trim());
-      const r = { id: '', label: '', detail: '' };
+      const r = { id: '', label: '', detail: '', pinned: false };
       for (const p of parts) {
         if (p.startsWith('id:')) r.id = p.slice(3);
         else if (p.startsWith('detail:')) r.detail = p.slice(7);
+        else if (p === 'pinned:true') r.pinned = true;
         else if (p) r.label = p;
       }
       if (!r.id) r.id = 'r-' + nanoid(6);
@@ -213,7 +219,9 @@ export function parseRituals(raw) {
 export function serializeRituals(rituals, streaks, doneDates) {
   const lines = ['---', 'type: rituals', '---', ''];
   for (const r of rituals) {
-    lines.push(`[RITUAL] id:${r.id} | ${r.label} | detail:${r.detail}`);
+    let line = `[RITUAL] id:${r.id} | ${r.label} | detail:${r.detail}`;
+    if (r.pinned) line += ' | pinned:true';
+    lines.push(line);
   }
   lines.push('');
   for (const [id, dates] of Object.entries(streaks)) {
