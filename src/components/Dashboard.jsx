@@ -4,7 +4,7 @@ import { IconSearch, IconChev } from './atoms/Icons.jsx';
 import { dayOfWeek, weekNumber, isOverdue, isDueToday, isDueThisWeek, relativeTime } from '../lib/utils.js';
 
 export default function Dashboard({ onNewThread, onSearch }) {
-  const { threads, updateBlock, getAllFollowups, getAllDecisions, getAllQuestions } = useApp();
+  const { threads, updateBlock, getAllFollowups, getAllDecisions, getAllQuestions, openThread } = useApp();
 
   const allFU = getAllFollowups();
   const overdueFU = allFU.filter(f => f.state !== 'closed' && isOverdue(f.due));
@@ -190,7 +190,12 @@ export default function Dashboard({ onNewThread, onSearch }) {
                       "{q.text}"
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--ink-soft)', marginTop: 2 }}>
-                      {q.threadTitle}
+                      <button
+                        onClick={() => openThread(q.threadId)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-soft)', textDecoration: 'underline dotted', fontSize: 11, padding: 0 }}
+                      >
+                        {q.threadTitle}
+                      </button>
                     </div>
                   </div>
                 ))}
