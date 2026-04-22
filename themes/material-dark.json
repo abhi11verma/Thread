@@ -1,0 +1,46 @@
+{
+  "key": "material-dark",
+  "label": "Material",
+  "meta": {
+    "dark": true,
+    "description": "Material Design 2 dark theme — #121212 base, elevation overlays, Teal 200 accent"
+  },
+  "tokens": {
+    "global": {
+      "radius": "4px",
+      "radius-sm": "4px"
+    },
+    "surface": {
+      "paper":   "#121212",
+      "paper-2": "#1E1E1E",
+      "paper-3": "#272727"
+    },
+    "text": {
+      "ink":       "#E0E0E0",
+      "ink-2":     "#B8B8B8",
+      "ink-soft":  "#9E9E9E",
+      "ink-faint": "#616161"
+    },
+    "border": {
+      "line":       "#2C2C2C",
+      "line-strong": "#3E3E3E"
+    },
+    "accent": {
+      "accent":      "#80DEEA",
+      "accent-soft": "#0D2426"
+    },
+    "warn": {
+      "warn":      "#FFE082",
+      "warn-soft": "#1E1800"
+    },
+    "thread": {
+      "chip-waiting-bg":     "#1E1800",
+      "chip-waiting-border": "#6B5500",
+      "chip-waiting-text":   "#FFE082",
+      "chip-checked-bg":     "#051408",
+      "chip-checked-border": "#2D6A30",
+      "chip-checked-text":   "#A5D6A7"
+    },
+    "ritual": {}
+  }
+}
