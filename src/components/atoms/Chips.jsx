@@ -8,8 +8,16 @@ export function Chip({ children, kind = '', style, onClick }) {
   );
 }
 
-export function Tag({ t }) {
-  return <span className="chip chip-tag">{t}</span>;
+export function Tag({ t, onClick }) {
+  return (
+    <span
+      className="chip chip-tag"
+      onClick={onClick}
+      style={onClick ? { cursor: 'pointer' } : undefined}
+    >
+      {t}
+    </span>
+  );
 }
 
 export function Person({ name }) {

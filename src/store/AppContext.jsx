@@ -14,6 +14,7 @@ const INIT = {
   threads: [],
   activeThreadId: null,
   section: 'dashboard',
+  activeTag: null,
   rituals: [],
   streaks: {},
   doneDates: {},
@@ -28,8 +29,9 @@ function reducer(state, action) {
     case 'SET_LOADING':  return { ...state, loading: action.value };
     case 'SET_ERROR':    return { ...state, error: action.message, loading: false };
     case 'LOAD_ALL':     return { ...state, threads: action.threads, rituals: action.rituals, streaks: action.streaks, doneDates: action.doneDates, scratches: action.scratches, loading: false };
-    case 'SET_SECTION':  return { ...state, section: action.section, activeThreadId: action.threadId ?? state.activeThreadId };
+    case 'SET_SECTION':  return { ...state, section: action.section, activeThreadId: action.threadId ?? state.activeThreadId, activeTag: null };
     case 'OPEN_THREAD':  return { ...state, section: 'thread', activeThreadId: action.threadId };
+    case 'SET_TAG':      return { ...state, activeTag: action.tag, section: 'threads' };
     case 'RESTORE_NAV':  return { ...state, section: action.section, activeThreadId: action.activeThreadId ?? null };
     case 'UPDATE_THREAD': {
       const threads = state.threads.map(t => t.id === action.thread.id ? action.thread : t);
@@ -159,6 +161,11 @@ export function AppProvider({ children }) {
     const resolvedThreadId = threadId ?? stateRef.current.activeThreadId;
     dispatch({ type: 'SET_SECTION', section, threadId });
     window.history.pushState({ section, activeThreadId: resolvedThreadId }, '');
+  }, []);
+
+  const setActiveTag = useCallback((tag) => {
+    dispatch({ type: 'SET_TAG', tag });
+    window.history.pushState({ section: 'threads', activeThreadId: stateRef.current.activeThreadId }, '');
   }, []);
 
   const openThread = useCallback((threadId) => {
@@ -410,6 +417,7 @@ export function AppProvider({ children }) {
     tryRestore,
     rescanDirectory,
     setSection,
+    setActiveTag,
     openThread,
     createThread,
     addBlock,
