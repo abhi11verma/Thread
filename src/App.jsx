@@ -48,8 +48,8 @@ function AppShell() {
         return;
       }
       if ((e.metaKey || e.ctrlKey) && (e.key === 'n' || e.key === 'N')) { e.preventDefault(); setNewThreadTitle(''); setShowNewThread(true); return; }
+      if (e.key === 'Escape') { setShowNewThread(false); setShowAddRitual(false); setShowSearch(false); return; }
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      if (e.key === 'Escape') { setShowNewThread(false); setShowAddRitual(false); setShowSearch(false); }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
