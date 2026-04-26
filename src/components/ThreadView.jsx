@@ -240,7 +240,7 @@ export default function ThreadView() {
       }}
     >
       {/* ── Left: feed + composer ── */}
-      <div style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: '18px 28px 40px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: 'var(--content-pad-y) var(--content-pad-x) 40px', display: 'flex', flexDirection: 'column' }}>
 
         {/* Breadcrumb */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, justifyContent: 'space-between' }}>
@@ -281,7 +281,7 @@ export default function ThreadView() {
           style={{
             background: 'var(--paper-2)',
             borderRadius: 14,
-            padding: '12px 14px',
+            padding: 'var(--card-pad)',
             marginBottom: 32,
             position: 'relative',
           }}
@@ -423,7 +423,7 @@ export default function ThreadView() {
       />
 
       {/* ── Right rail ── */}
-      <aside style={{ width: rightPaneWidth, flexShrink: 0, borderLeft: '1px solid var(--line)', paddingLeft: 16, paddingTop: '18px', paddingBottom: '40px', display: 'flex', flexDirection: 'column', gap: 18, overflowY: 'auto' }}>
+      <aside style={{ width: rightPaneWidth, flexShrink: 0, borderLeft: '1px solid var(--line)', paddingLeft: 16, paddingRight: 16, paddingTop: '18px', paddingBottom: '40px', display: 'flex', flexDirection: 'column', gap: 18, overflowY: 'auto' }}>
         <section>
           <div className="kicker" style={{ marginBottom: 6 }}>Open follow-ups</div>
           {openFUs.length === 0 && <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>None open.</div>}

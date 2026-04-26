@@ -27,6 +27,36 @@
   --chip-checked-bg:     #EAF0E8;
   --chip-checked-border: #7A9E76;
   --chip-checked-text:   #2A4A26;
+
+  /* Typography */
+  --font-sans:             'Inter', -apple-system, 'Helvetica Neue', sans-serif;
+  --font-mono:             'JetBrains Mono', 'Fira Code', monospace;
+  --font-size-base:        14px;
+  --letter-spacing-base:   0em;
+  --font-optical-sizing:   none;
+
+  /* Layout / spacing */
+  --content-pad-x:  28px;
+  --content-pad-y:  20px;
+  --card-pad:       16px;
+  --nav-item-h:     32px;
+  --nav-px:         8px;
+  --gap-xs:         4px;
+  --gap-sm:         8px;
+  --gap-md:         14px;
+  --gap-lg:         24px;
+
+  /* Elevation */
+  --card-shadow:      2px 3px 0 rgba(10,10,10,0.04);
+  --card-soft-shadow: 1px 2px 0 rgba(10,10,10,0.03);
+  --modal-shadow:     0 24px 64px rgba(0,0,0,0.35);
+
+  /* Component shape */
+  --btn-radius:    7px;
+  --input-radius:  9px;
+  --input-bg:      var(--paper-3);
+  --input-border:  none;
+  --input-padding: 10px 13px;
 }
 
 * { box-sizing: border-box; }
@@ -37,8 +67,10 @@ html, body, #root {
   height: 100%;
   background: var(--paper);
   color: var(--ink);
-  font-family: 'Inter', -apple-system, 'Helvetica Neue', sans-serif;
-  font-size: 14px;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  letter-spacing: var(--letter-spacing-base);
+  font-optical-sizing: var(--font-optical-sizing);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -50,14 +82,14 @@ html, body, #root {
 ::-webkit-scrollbar-track { background: transparent; }
 
 /* ── Typography ── */
-.font-display { font-family: 'Inter', sans-serif; font-weight: 700; letter-spacing: -0.4px; }
-.font-sketch  { font-family: 'Inter', sans-serif; font-weight: 500; letter-spacing: -0.1px; }
-.font-hand    { font-family: 'Inter', sans-serif; font-weight: 300; }
-.font-mono    { font-family: 'JetBrains Mono', monospace; }
+.font-display { font-family: var(--font-sans); font-weight: 700; letter-spacing: -0.4px; }
+.font-sketch  { font-family: var(--font-sans); font-weight: 500; letter-spacing: -0.1px; }
+.font-hand    { font-family: var(--font-sans); font-weight: 300; }
+.font-mono    { font-family: var(--font-mono); }
 
 /* ── Kicker label ── */
 .kicker {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -69,18 +101,19 @@ html, body, #root {
   background: var(--paper);
   border: 1.25px solid var(--ink);
   border-radius: var(--radius);
-  box-shadow: 2px 3px 0 rgba(10,10,10,0.04);
+  box-shadow: var(--card-shadow);
 }
 .sk-card-soft {
   background: var(--paper);
   border: 1.25px solid var(--line-strong);
   border-radius: var(--radius);
-  box-shadow: 1px 2px 0 rgba(10,10,10,0.03);
+  box-shadow: var(--card-soft-shadow);
 }
+.sk-modal { box-shadow: var(--modal-shadow); }
 
 /* Dark-mode structural overrides — toggled via data-dark attribute on <html> */
-[data-dark] .sk-card      { box-shadow: none; border-color: var(--line); }
-[data-dark] .sk-card-soft { box-shadow: none; background: var(--paper-2); border-color: var(--line-strong); }
+[data-dark] .sk-card      { box-shadow: var(--card-shadow, none); border-color: var(--line); }
+[data-dark] .sk-card-soft { box-shadow: var(--card-soft-shadow, none); background: var(--paper-2); border-color: var(--line-strong); }
 
 /* ── Buttons ── */
 .btn {
@@ -90,7 +123,7 @@ html, body, #root {
   padding: 5px 10px;
   border: 1.25px solid var(--ink);
   background: var(--paper);
-  border-radius: 7px;
+  border-radius: var(--btn-radius);
   font-family: inherit;
   font-size: 12.5px;
   cursor: pointer;
@@ -122,7 +155,7 @@ html, body, #root {
   line-height: 1.6;
   white-space: nowrap;
 }
-.chip-tag    { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--ink-2); border-color: var(--line-strong); }
+.chip-tag    { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-2); border-color: var(--line-strong); }
 .chip-person { background: var(--paper-3); }
 .chip-open   { background: var(--paper); border-color: var(--ink); }
 .chip-waiting {
@@ -176,12 +209,12 @@ html, body, #root {
 
 /* ── Input ── */
 .sk-input {
-  border: none;
-  border-radius: 9px;
-  padding: 10px 13px;
+  border: var(--input-border);
+  border-radius: var(--input-radius);
+  padding: var(--input-padding);
   font-family: inherit;
   font-size: 14px;
-  background: var(--paper-3);
+  background: var(--input-bg);
   color: var(--ink);
   width: 100%;
   outline: none;
@@ -193,8 +226,8 @@ html, body, #root {
 /* ── Rich input (WYSIWYG wrapper that looks like sk-input) ── */
 .sk-rich-input {
   border: none;
-  border-radius: 9px;
-  padding: 10px 13px;
+  border-radius: var(--input-radius);
+  padding: var(--input-padding);
   background: var(--paper-3);
   width: 100%;
   cursor: text;
@@ -221,14 +254,14 @@ html, body, #root {
   border: 1.25px dashed var(--line-strong);
   border-radius: var(--radius-sm);
   padding: 12px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   color: var(--ink-soft);
 }
 
 /* ── Kbd ── */
 .kbd {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   padding: 1px 5px;
   border: 1px solid var(--line-strong);

@@ -55,13 +55,13 @@ export default function NewThreadModal({ onClose, initialTitle = '' }) {
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
+        className="sk-modal"
         style={{
           width: 520,
           background: 'var(--paper)',
           border: '1px solid var(--line)',
           borderRadius: 16,
-          padding: '28px 28px 24px',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
+          padding: 'var(--card-pad)',
         }}
       >
         {/* Editable title */}

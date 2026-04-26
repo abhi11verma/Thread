@@ -39,7 +39,7 @@ export default function FollowupsView() {
   }
 
   return (
-    <main style={{ flex: 1, padding: '22px 28px 40px', background: 'var(--paper)', overflowY: 'auto' }}>
+    <main style={{ flex: 1, padding: 'var(--content-pad-y) var(--content-pad-x) 40px', background: 'var(--paper)', overflowY: 'auto' }}>
       <h1 className="font-sketch" style={{ margin: '0 0 20px', fontWeight: 400, fontSize: 26 }}>All follow-ups</h1>
       {allFU.length === 0 && (
         <div className="placeholder" style={{ textAlign: 'center', padding: 24 }}>No open follow-ups — all clear ✓</div>

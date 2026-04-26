@@ -38,7 +38,7 @@ export default function Dashboard({ onNewThread, onSearch }) {
     <main
       style={{
         flex: 1, minWidth: 0, overflowY: 'auto',
-        padding: '28px 36px 48px',
+        padding: 'var(--content-pad-y) var(--content-pad-x) 48px',
         background: 'var(--paper)',
       }}
     >

@@ -105,10 +105,10 @@ export default function Sidebar({ themeKey, setThemeKey, onNewThread, onAddRitua
         width,
         borderRight: '1px solid var(--line)',
         background: 'var(--paper-2)',
-        padding: '14px 12px',
+        padding: 'var(--gap-sm) var(--nav-px)',
         display: 'flex',
         flexDirection: 'column',
-        gap: 14,
+        gap: 'var(--gap-md)',
         minHeight: 0,
         overflow: 'hidden',
         flexShrink: 0,
@@ -131,104 +131,107 @@ export default function Sidebar({ themeKey, setThemeKey, onNewThread, onAddRitua
         <IconPlus size={13} /> New thread <span className="kbd" style={{ borderColor: '#555', background: '#222', color: '#ddd' }}>N</span>
       </button>
 
-      {/* Nav */}
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {NAV.map(({ key, label, Icon }) => {
-          const active = section === key && !(section === 'threads' && activeThreadId);
-          const count = countFor(key);
-          return (
-            <button
-              key={key}
-              onClick={() => setSection(key)}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '5px 8px', borderRadius: 6,
-                background: active ? 'var(--paper)' : 'transparent',
-                border: active ? '1px solid var(--line-strong)' : '1px solid transparent',
-                cursor: 'pointer', fontFamily: 'inherit', color: 'var(--ink)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Icon size={14} /> <span style={{ fontSize: 13 }}>{label}</span>
-              </div>
-              {count != null && (
-                <span className="font-mono" style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{count}</span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
+      {/* Scrollable list area */}
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--gap-md)' }}>
 
-      {/* Pinned threads */}
-      {pinnedThreads.length > 0 && (
-        <>
-          <div className="kicker" style={{ padding: '0 4px', marginTop: 2 }}>Threads — active</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {pinnedThreads.map(t => {
-              const isActive = section === 'thread' && t.id === activeThreadId;
-              const openCount = t.blocks.filter(b => b.type === 'FOLLOWUP' && (b.state === 'open' || b.state === 'waiting')).length;
-              const waitingCount = t.blocks.filter(b => b.type === 'FOLLOWUP' && b.state === 'waiting').length;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => openThread(t.id)}
-                  style={{
-                    textAlign: 'left',
-                    padding: '9px 11px',
-                    border: isActive ? '1px solid var(--line-strong)' : '1px solid var(--line)',
-                    background: isActive ? 'var(--paper)' : 'var(--paper-3)',
-                    borderRadius: 10,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    transition: 'background 0.1s',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-                    <span style={{
-                      fontSize: 13.5, fontWeight: 500,
-                      color: 'var(--ink)',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      flex: 1,
-                    }}>
-                      {t.title}
-                    </span>
-                    {openCount > 0 && (
+        {/* Nav */}
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {NAV.map(({ key, label, Icon }) => {
+            const active = section === key && !(section === 'threads' && activeThreadId);
+            const count = countFor(key);
+            return (
+              <button
+                key={key}
+                onClick={() => setSection(key)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '5px 8px', borderRadius: 6,
+                  background: active ? 'var(--paper)' : 'transparent',
+                  border: active ? '1px solid var(--line-strong)' : '1px solid transparent',
+                  cursor: 'pointer', fontFamily: 'inherit', color: 'var(--ink)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Icon size={14} /> <span style={{ fontSize: 13 }}>{label}</span>
+                </div>
+                {count != null && (
+                  <span className="font-mono" style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{count}</span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Pinned threads */}
+        {pinnedThreads.length > 0 && (
+          <>
+            <div className="kicker" style={{ padding: '0 4px', marginTop: 2 }}>Threads — active</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {pinnedThreads.map(t => {
+                const isActive = section === 'thread' && t.id === activeThreadId;
+                const openCount = t.blocks.filter(b => b.type === 'FOLLOWUP' && (b.state === 'open' || b.state === 'waiting')).length;
+                const waitingCount = t.blocks.filter(b => b.type === 'FOLLOWUP' && b.state === 'waiting').length;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => openThread(t.id)}
+                    style={{
+                      textAlign: 'left',
+                      padding: '9px 11px',
+                      border: isActive ? '1px solid var(--line-strong)' : '1px solid var(--line)',
+                      background: isActive ? 'var(--paper)' : 'var(--paper-3)',
+                      borderRadius: 10,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      transition: 'background 0.1s',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
                       <span style={{
-                        fontSize: 10.5, fontFamily: 'JetBrains Mono, monospace',
-                        color: waitingCount > 0 ? 'var(--warn)' : 'var(--ink-soft)',
-                        flexShrink: 0,
+                        fontSize: 13.5, fontWeight: 500,
+                        color: 'var(--ink)',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        flex: 1,
                       }}>
-                        {openCount}
+                        {t.title}
                       </span>
-                    )}
-                  </div>
-                  <div style={{ marginTop: 4, fontSize: 11, color: 'var(--ink-soft)' }}>
-                    {openCount === 0 ? 'no open loops' : `${openCount} open${waitingCount > 0 ? ` · ${waitingCount} waiting` : ''}`}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
+                      {openCount > 0 && (
+                        <span style={{
+                          fontSize: 10.5, fontFamily: 'JetBrains Mono, monospace',
+                          color: waitingCount > 0 ? 'var(--warn)' : 'var(--ink-soft)',
+                          flexShrink: 0,
+                        }}>
+                          {openCount}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ marginTop: 4, fontSize: 11, color: 'var(--ink-soft)' }}>
+                      {openCount === 0 ? 'no open loops' : `${openCount} open${waitingCount > 0 ? ` · ${waitingCount} waiting` : ''}`}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
 
-      {/* Tags */}
-      {allTags.length > 0 && (
-        <>
-          <div className="kicker" style={{ padding: '0 8px' }}>Tags</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: '0 6px' }}>
-            {allTags.map(t => (
-              <Tag
-                key={t}
-                t={t}
-                onClick={() => setActiveTag(activeTag === t ? null : t)}
-              />
-            ))}
-          </div>
-        </>
-      )}
+        {/* Tags */}
+        {allTags.length > 0 && (
+          <>
+            <div className="kicker" style={{ padding: '0 8px' }}>Tags</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: '0 6px' }}>
+              {allTags.map(t => (
+                <Tag
+                  key={t}
+                  t={t}
+                  onClick={() => setActiveTag(activeTag === t ? null : t)}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
-      <div style={{ flex: 1 }} />
+      </div>
 
       {/* The Daily — persistent sidebar strip */}
       <TheDailySidebar rituals={rituals} streaks={streaks} doneDates={doneDates} onAdd={onAddRitual} />
@@ -255,13 +258,13 @@ export default function Sidebar({ themeKey, setThemeKey, onNewThread, onAddRitua
         }}
       >
         <div
+          className="sk-modal"
           onClick={e => e.stopPropagation()}
           style={{
             width: 640, maxWidth: '90vw', maxHeight: '80vh',
             background: 'var(--paper-2)',
             border: '1px solid var(--line-strong)',
             borderRadius: 10,
-            boxShadow: '0 24px 64px rgba(0,0,0,0.35)',
             display: 'flex',
             overflow: 'hidden',
           }}

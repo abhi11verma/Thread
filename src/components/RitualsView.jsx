@@ -27,7 +27,7 @@ export default function RitualsView() {
   }
 
   return (
-    <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: '22px 28px 40px', background: 'var(--paper)' }}>
+    <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: 'var(--content-pad-y) var(--content-pad-x) 40px', background: 'var(--paper)' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22 }}>
         <div>
           <div className="kicker" style={{ marginBottom: 4 }}>daily habits · streak tracking</div>
@@ -188,7 +188,7 @@ function RitualDetail({ ritual, streaks, doneDates, onToggle, onTogglePin, onBac
   }
 
   return (
-    <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: '22px 28px 40px', background: 'var(--paper)' }}>
+    <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: 'var(--content-pad-y) var(--content-pad-x) 40px', background: 'var(--paper)' }}>
       {/* Back */}
       <button
         className="btn btn-ghost"

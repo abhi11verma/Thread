@@ -71,7 +71,7 @@ export default function SearchModal({ onClose, onNewThread }) {
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="sk-card"
+        className="sk-card sk-modal"
         style={{ width: 560, background: 'var(--paper)', overflow: 'hidden', padding: 0 }}
       >
         {/* Input row */}

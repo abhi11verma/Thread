@@ -230,6 +230,82 @@
         },
         "ritual": {}
       }
+    },
+    {
+      "key": "linear",
+      "label": "Linear",
+      "meta": {
+        "dark": true,
+        "description": "Linear's precise dark-first UI — near-black surfaces, desaturated blue accent"
+      },
+      "tokens": {
+        "global": {
+          "radius":    "6px",
+          "radius-sm": "4px"
+        },
+        "surface": {
+          "paper":   "#09090B",
+          "paper-2": "#111113",
+          "paper-3": "#1C1C1F"
+        },
+        "text": {
+          "ink":       "#F4F5F8",
+          "ink-2":     "rgba(244,245,248,0.75)",
+          "ink-soft":  "rgba(244,245,248,0.55)",
+          "ink-faint": "rgba(244,245,248,0.35)"
+        },
+        "border": {
+          "line":        "rgba(255,255,255,0.06)",
+          "line-strong": "rgba(255,255,255,0.10)"
+        },
+        "accent": {
+          "accent":      "#537EE0",
+          "accent-soft": "rgba(83,126,224,0.12)"
+        },
+        "warn": {
+          "warn":      "#F5AD24",
+          "warn-soft": "rgba(245,173,36,0.12)"
+        },
+        "thread": {
+          "chip-waiting-bg":     "rgba(245,173,36,0.12)",
+          "chip-waiting-border": "rgba(245,173,36,0.35)",
+          "chip-waiting-text":   "#F5AD24",
+          "chip-checked-bg":     "rgba(46,184,128,0.12)",
+          "chip-checked-border": "rgba(46,184,128,0.35)",
+          "chip-checked-text":   "#2EB880"
+        },
+        "typography": {
+          "font-sans":           "'Inter', -apple-system, sans-serif",
+          "font-mono":           "'JetBrains Mono', 'Fira Code', monospace",
+          "font-size-base":      "13px",
+          "letter-spacing-base": "-0.01em",
+          "font-optical-sizing": "auto"
+        },
+        "layout": {
+          "content-pad-x": "14px",
+          "content-pad-y": "12px",
+          "card-pad":      "12px",
+          "nav-item-h":    "28px",
+          "nav-px":        "8px",
+          "gap-xs":        "2px",
+          "gap-sm":        "6px",
+          "gap-md":        "8px",
+          "gap-lg":        "16px"
+        },
+        "elevation": {
+          "card-shadow":      "0 4px 12px rgba(0,0,0,0.55), 0 2px 4px rgba(0,0,0,0.4)",
+          "card-soft-shadow": "0 2px 4px rgba(0,0,0,0.5)",
+          "modal-shadow":     "0 8px 24px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.5)"
+        },
+        "component": {
+          "btn-radius":    "4px",
+          "input-radius":  "4px",
+          "input-bg":      "#161618",
+          "input-border":  "1px solid rgba(255,255,255,0.08)",
+          "input-padding": "6px 10px"
+        },
+        "ritual": {}
+      }
     }
   ]
 }

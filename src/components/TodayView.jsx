@@ -21,7 +21,7 @@ export default function TodayView() {
   }
 
   return (
-    <main style={{ flex: 1, padding: '22px 28px 40px', background: 'var(--paper)', overflowY: 'auto' }}>
+    <main style={{ flex: 1, padding: 'var(--content-pad-y) var(--content-pad-x) 40px', background: 'var(--paper)', overflowY: 'auto' }}>
       <h1 className="font-sketch" style={{ margin: '0 0 20px', fontWeight: 400, fontSize: 26 }}>
         Today · {dayOfWeek()} {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
       </h1>

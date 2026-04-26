@@ -19,7 +19,7 @@ export default function ArchiveView() {
   const paused = archived.filter(t => t.status === 'paused');
 
   return (
-    <main style={{ flex: 1, overflowY: 'auto', padding: '18px 28px 40px', background: 'var(--paper)' }}>
+    <main style={{ flex: 1, overflowY: 'auto', padding: 'var(--content-pad-y) var(--content-pad-x) 40px', background: 'var(--paper)' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 18 }}>
         <h1 className="font-sketch" style={{ margin: 0, fontSize: 26, fontWeight: 400 }}>Archive</h1>
         <span className="font-mono" style={{ fontSize: 11, color: 'var(--ink-soft)' }}>

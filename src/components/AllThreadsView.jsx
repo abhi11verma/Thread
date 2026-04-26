@@ -7,7 +7,7 @@ export default function AllThreadsView({ onNewThread }) {
   const filtered = activeTag ? threads.filter(t => t.tags.includes(activeTag)) : threads;
 
   return (
-    <main style={{ flex: 1, padding: '22px 28px 40px', background: 'var(--paper)', overflowY: 'auto' }}>
+    <main style={{ flex: 1, padding: 'var(--content-pad-y) var(--content-pad-x) 40px', background: 'var(--paper)', overflowY: 'auto' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <h1 className="font-sketch" style={{ margin: 0, fontWeight: 400, fontSize: 26 }}>All threads</h1>
