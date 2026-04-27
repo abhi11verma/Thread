@@ -44,6 +44,36 @@
           "chip-checked-border": "#7A9E76",
           "chip-checked-text": "#2A4A26"
         },
+        "typography": {
+          "font-sans":           "'Inter', -apple-system, 'Helvetica Neue', sans-serif",
+          "font-mono":           "'JetBrains Mono', 'Fira Code', monospace",
+          "font-size-base":      "14px",
+          "letter-spacing-base": "0em",
+          "font-optical-sizing": "none"
+        },
+        "layout": {
+          "content-pad-x": "28px",
+          "content-pad-y": "20px",
+          "card-pad":      "16px",
+          "nav-item-h":    "32px",
+          "nav-px":        "8px",
+          "gap-xs":        "4px",
+          "gap-sm":        "8px",
+          "gap-md":        "14px",
+          "gap-lg":        "24px"
+        },
+        "elevation": {
+          "card-shadow":      "2px 3px 0 rgba(10,10,10,0.04)",
+          "card-soft-shadow": "1px 2px 0 rgba(10,10,10,0.03)",
+          "modal-shadow":     "0 24px 64px rgba(0,0,0,0.35)"
+        },
+        "component": {
+          "btn-radius":    "7px",
+          "input-radius":  "9px",
+          "input-bg":      "var(--paper-3)",
+          "input-border":  "none",
+          "input-padding": "10px 13px"
+        },
         "ritual": {}
       }
     },
@@ -89,6 +119,36 @@
           "chip-checked-bg": "#EAF0E8",
           "chip-checked-border": "#7A9E76",
           "chip-checked-text": "#2A4A26"
+        },
+        "typography": {
+          "font-sans":           "'Inter', -apple-system, 'Helvetica Neue', sans-serif",
+          "font-mono":           "'JetBrains Mono', 'Fira Code', monospace",
+          "font-size-base":      "14px",
+          "letter-spacing-base": "0em",
+          "font-optical-sizing": "none"
+        },
+        "layout": {
+          "content-pad-x": "28px",
+          "content-pad-y": "20px",
+          "card-pad":      "16px",
+          "nav-item-h":    "32px",
+          "nav-px":        "8px",
+          "gap-xs":        "4px",
+          "gap-sm":        "8px",
+          "gap-md":        "14px",
+          "gap-lg":        "24px"
+        },
+        "elevation": {
+          "card-shadow":      "2px 3px 0 rgba(10,10,10,0.04)",
+          "card-soft-shadow": "1px 2px 0 rgba(10,10,10,0.03)",
+          "modal-shadow":     "0 24px 64px rgba(0,0,0,0.35)"
+        },
+        "component": {
+          "btn-radius":    "7px",
+          "input-radius":  "9px",
+          "input-bg":      "var(--paper-3)",
+          "input-border":  "none",
+          "input-padding": "10px 13px"
         },
         "ritual": {}
       }
@@ -136,6 +196,36 @@
           "chip-checked-border": "#7A9E76",
           "chip-checked-text": "#2A4A26"
         },
+        "typography": {
+          "font-sans":           "'Inter', -apple-system, 'Helvetica Neue', sans-serif",
+          "font-mono":           "'JetBrains Mono', 'Fira Code', monospace",
+          "font-size-base":      "14px",
+          "letter-spacing-base": "0em",
+          "font-optical-sizing": "none"
+        },
+        "layout": {
+          "content-pad-x": "28px",
+          "content-pad-y": "20px",
+          "card-pad":      "16px",
+          "nav-item-h":    "32px",
+          "nav-px":        "8px",
+          "gap-xs":        "4px",
+          "gap-sm":        "8px",
+          "gap-md":        "14px",
+          "gap-lg":        "24px"
+        },
+        "elevation": {
+          "card-shadow":      "2px 3px 0 rgba(10,10,10,0.04)",
+          "card-soft-shadow": "1px 2px 0 rgba(10,10,10,0.03)",
+          "modal-shadow":     "0 24px 64px rgba(0,0,0,0.35)"
+        },
+        "component": {
+          "btn-radius":    "7px",
+          "input-radius":  "9px",
+          "input-bg":      "var(--paper-3)",
+          "input-border":  "none",
+          "input-padding": "10px 13px"
+        },
         "ritual": {}
       }
     },
@@ -182,6 +272,36 @@
           "chip-checked-border": "#4A7A48",
           "chip-checked-text": "#90C890"
         },
+        "typography": {
+          "font-sans":           "'Inter', -apple-system, 'Helvetica Neue', sans-serif",
+          "font-mono":           "'JetBrains Mono', 'Fira Code', monospace",
+          "font-size-base":      "14px",
+          "letter-spacing-base": "0em",
+          "font-optical-sizing": "none"
+        },
+        "layout": {
+          "content-pad-x": "28px",
+          "content-pad-y": "20px",
+          "card-pad":      "16px",
+          "nav-item-h":    "32px",
+          "nav-px":        "8px",
+          "gap-xs":        "4px",
+          "gap-sm":        "8px",
+          "gap-md":        "14px",
+          "gap-lg":        "24px"
+        },
+        "elevation": {
+          "card-shadow":      "none",
+          "card-soft-shadow": "none",
+          "modal-shadow":     "0 24px 64px rgba(0,0,0,0.5)"
+        },
+        "component": {
+          "btn-radius":    "7px",
+          "input-radius":  "9px",
+          "input-bg":      "var(--paper-3)",
+          "input-border":  "none",
+          "input-padding": "10px 13px"
+        },
         "ritual": {}
       }
     },
@@ -227,6 +347,36 @@
           "chip-checked-bg": "#001A04",
           "chip-checked-border": "#2A6A30",
           "chip-checked-text": "#70C870"
+        },
+        "typography": {
+          "font-sans":           "'Inter', -apple-system, 'Helvetica Neue', sans-serif",
+          "font-mono":           "'JetBrains Mono', 'Fira Code', monospace",
+          "font-size-base":      "14px",
+          "letter-spacing-base": "0em",
+          "font-optical-sizing": "none"
+        },
+        "layout": {
+          "content-pad-x": "28px",
+          "content-pad-y": "20px",
+          "card-pad":      "16px",
+          "nav-item-h":    "32px",
+          "nav-px":        "8px",
+          "gap-xs":        "4px",
+          "gap-sm":        "8px",
+          "gap-md":        "14px",
+          "gap-lg":        "24px"
+        },
+        "elevation": {
+          "card-shadow":      "none",
+          "card-soft-shadow": "none",
+          "modal-shadow":     "0 24px 64px rgba(0,0,0,0.6)"
+        },
+        "component": {
+          "btn-radius":    "7px",
+          "input-radius":  "9px",
+          "input-bg":      "var(--paper-3)",
+          "input-border":  "none",
+          "input-padding": "10px 13px"
         },
         "ritual": {}
       }
