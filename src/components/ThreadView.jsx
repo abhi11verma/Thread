@@ -84,15 +84,24 @@ function RichText({ text, style }) {
 
   const mdComponents = {
     p:      ({ children }) => <p style={{ margin: '0 0 6px 0' }}>{processChildren(children, 'p')}</p>,
-    strong: ({ children }) => <strong>{processChildren(children, 's')}</strong>,
-    em:     ({ children }) => <em>{processChildren(children, 'e')}</em>,
-    li:     ({ children }) => <li>{processChildren(children, 'li')}</li>,
-    a:      ({ href, children }) => <a href={href} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>{children}</a>,
-    code:   ({ inline, children }) => inline
-      ? <code style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.88em', background: 'var(--paper-3)', borderRadius: 3, padding: '0 4px' }}>{children}</code>
-      : <pre style={{ background: 'var(--paper-3)', borderRadius: 8, padding: '10px 12px', overflowX: 'auto', fontSize: 12 }}><code style={{ fontFamily: 'JetBrains Mono, monospace' }}>{children}</code></pre>,
-    ul: ({ children }) => <ul style={{ margin: '4px 0', paddingLeft: 18 }}>{children}</ul>,
-    ol: ({ children }) => <ol style={{ margin: '4px 0', paddingLeft: 18 }}>{children}</ol>,
+    strong: ({ children }) => <strong style={{ fontWeight: 600 }}>{processChildren(children, 's')}</strong>,
+    em:     ({ children }) => <em style={{ fontStyle: 'italic' }}>{processChildren(children, 'e')}</em>,
+    h1:     ({ children }) => <h1 style={{ fontSize: '1.35em', fontWeight: 600, margin: '6px 0 4px' }}>{processChildren(children, 'h1')}</h1>,
+    h2:     ({ children }) => <h2 style={{ fontSize: '1.15em', fontWeight: 600, margin: '6px 0 4px' }}>{processChildren(children, 'h2')}</h2>,
+    h3:     ({ children }) => <h3 style={{ fontSize: '1.05em', fontWeight: 600, margin: '6px 0 4px' }}>{processChildren(children, 'h3')}</h3>,
+    h4:     ({ children }) => <h4 style={{ fontSize: '1em', fontWeight: 600, margin: '4px 0 2px' }}>{processChildren(children, 'h4')}</h4>,
+    h5:     ({ children }) => <h5 style={{ fontSize: '0.9em', fontWeight: 600, margin: '4px 0 2px' }}>{processChildren(children, 'h5')}</h5>,
+    h6:     ({ children }) => <h6 style={{ fontSize: '0.85em', fontWeight: 600, margin: '4px 0 2px', color: 'var(--ink-soft)' }}>{processChildren(children, 'h6')}</h6>,
+    li:     ({ children }) => <li style={{ margin: '1px 0' }}>{processChildren(children, 'li')}</li>,
+    a:      ({ href, children }) => <a href={href} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline', textDecorationStyle: 'dotted' }}>{children}</a>,
+    blockquote: ({ children }) => <blockquote style={{ borderLeft: '3px solid var(--line-strong)', paddingLeft: '0.85em', color: 'var(--ink-soft)', margin: '4px 0' }}>{children}</blockquote>,
+    hr:     () => <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '8px 0' }} />,
+    pre:    ({ children }) => <pre style={{ background: 'var(--paper-3)', borderRadius: 8, padding: '10px 12px', overflowX: 'auto', fontSize: 12, margin: '4px 0' }}>{children}</pre>,
+    code:   ({ className, children }) => className
+      ? <code style={{ fontFamily: 'JetBrains Mono, monospace' }}>{children}</code>
+      : <code style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.88em', background: 'var(--paper-3)', borderRadius: 3, padding: '0 4px' }}>{children}</code>,
+    ul: ({ children }) => <ul style={{ margin: '4px 0', paddingLeft: 18, listStyle: 'disc' }}>{children}</ul>,
+    ol: ({ children }) => <ol style={{ margin: '4px 0', paddingLeft: 18, listStyle: 'decimal' }}>{children}</ol>,
   };
 
   return (
