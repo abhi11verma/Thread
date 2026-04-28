@@ -6,7 +6,7 @@ const KINDS = ['project', 'topic', 'person'];
 const DEFAULT_TITLE = 'New thread';
 
 export default function NewThreadModal({ onClose, initialTitle = '' }) {
-  const { threads, createThread, addBlock } = useApp();
+  const { threads, createThread } = useApp();
   const [title, setTitle] = useState(initialTitle || '');
   const [kind, setKind] = useState('project');
   const [tagsRaw, setTagsRaw] = useState('');
@@ -33,10 +33,8 @@ export default function NewThreadModal({ onClose, initialTitle = '' }) {
     setSaving(true);
     const finalTitle = resolveTitle(title);
     const tags = tagsRaw.split(/[\s,]+/).filter(t => t).map(t => t.startsWith('#') ? t : `#${t}`);
-    const thread = await createThread({ title: finalTitle, kind, tags });
-    if (thread && noteContent.trim()) {
-      await addBlock(thread.id, { type: 'NOTE', text: noteContent.trim() });
-    }
+    const initialBlocks = noteContent.trim() ? [{ type: 'NOTE', text: noteContent.trim() }] : [];
+    await createThread({ title: finalTitle, kind, tags, initialBlocks });
     onClose();
   }
 

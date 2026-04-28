@@ -174,13 +174,19 @@ export function AppProvider({ children }) {
   }, []);
 
   // ── Create thread ───────────────────────────────────────────────────────
-  const createThread = useCallback(async ({ title, kind, tags, people }) => {
+  const createThread = useCallback(async ({ title, kind, tags, people, initialBlocks }) => {
     const { dirHandle } = state;
     if (!dirHandle) return;
+    const makeBlocks = (raw) => (raw || []).map(b => ({
+      ...b,
+      date: b.date || today(),
+      id: b.id || (b.type.toLowerCase().slice(0, 3) + '-' + nanoid(6)),
+    }));
     if (IS_DEMO) {
       const slug = generateSlug(title) + '-' + nanoid(4);
       const meta = { title, kind: kind || 'project', status: 'active', tags: tags || [], people: people || [], created: new Date().toISOString() };
-      const thread = { id: slug, slug, filename: `${slug}.md`, ...meta, blocks: [] };
+      const blocks = makeBlocks(initialBlocks);
+      const thread = { id: slug, slug, filename: `${slug}.md`, ...meta, blocks };
       dispatch({ type: 'ADD_THREAD', thread });
       dispatch({ type: 'OPEN_THREAD', threadId: slug });
       window.history.pushState({ section: 'thread', activeThreadId: slug }, '');
@@ -188,7 +194,7 @@ export function AppProvider({ children }) {
     }
     const slug = generateSlug(title) + '-' + nanoid(4);
     const meta = { title, kind: kind || 'project', status: 'active', tags: tags || [], people: people || [], created: new Date().toISOString() };
-    const blocks = [];
+    const blocks = makeBlocks(initialBlocks);
     const raw = serializeThread(meta, blocks);
     await writeFile(dirHandle, `threads/${slug}.md`, raw);
     const thread = { id: slug, slug, filename: `${slug}.md`, ...meta, blocks };
