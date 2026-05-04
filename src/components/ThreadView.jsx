@@ -289,14 +289,36 @@ export default function ThreadView() {
         </button>
       )}
 
-      {/* ── Zen TOC panel — no separator, part of the page ── */}
+      {/* ── Zen: submit button top-right ── */}
+      {zenMode && (
+        <button
+          onClick={handleSubmit}
+          disabled={!text.trim()}
+          title="Post note (⌘↵)"
+          style={{
+            position: 'absolute', top: 16, right: 20, zIndex: 10,
+            width: 30, height: 30, borderRadius: '50%',
+            background: text.trim() ? 'var(--ink)' : 'var(--paper-3)',
+            color: text.trim() ? 'var(--paper)' : 'var(--ink-faint)',
+            border: 'none', cursor: text.trim() ? 'pointer' : 'default',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'background 0.15s',
+          }}
+        >
+          <IconArrowUp size={14} strokeWidth={2} />
+        </button>
+      )}
+
+      {/* ── Zen TOC panel — vertically centered, no separator ── */}
       {zenMode && (
         <div style={{
           width: zenTocCollapsed ? 44 : 240, flexShrink: 0,
+          height: '100%',
           transition: 'width 0.22s ease',
           overflowY: 'auto', overflowX: 'hidden',
           display: 'flex', flexDirection: 'column',
-          padding: zenTocCollapsed ? '72px 0 40px' : '72px 20px 40px',
+          justifyContent: 'center',
+          padding: zenTocCollapsed ? 0 : '0 20px',
         }}>
           {!zenTocCollapsed && zenHeadings.length > 0 && (
             <div className="kicker" style={{ marginBottom: 10 }}>Contents</div>
@@ -372,7 +394,7 @@ export default function ThreadView() {
         <div style={zenMode ? {
           flex: 1, overflowY: 'auto',
           display: 'flex', justifyContent: 'center',
-          padding: '64px 40px 80px',
+          padding: '72px 40px 120px',
         } : {
           flex: 1, minWidth: 0, overflowY: 'auto',
           padding: '18px 28px 40px',
@@ -427,11 +449,16 @@ export default function ThreadView() {
             {/* ── Composer — always rendered so editor never remounts ── */}
             <div
               className={zenMode ? 'zen-editor' : ''}
-              style={{
+              style={zenMode ? {
+                background: 'transparent',
+                padding: 0,
+                marginBottom: 0,
+                position: 'relative',
+              } : {
                 background: 'var(--paper-2)',
                 borderRadius: 14,
                 padding: '12px 14px',
-                marginBottom: zenMode ? 0 : 32,
+                marginBottom: 32,
                 position: 'relative',
               }}
             >
@@ -468,12 +495,13 @@ export default function ThreadView() {
                 onSlugQuery={query => { setSlugQuery(query); if (query !== null) setSlugIdx(0); }}
                 onKeyDown={handleKey}
                 placeholder="Add a note… @name for follow-ups · [[YYYY-MM-DD]] due date · [[thread-slug]] to link"
-                minHeight={zenMode ? 320 : 72}
+                minHeight={zenMode ? 'calc(100vh - 260px)' : 72}
                 autoFocus
               />
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {/* Bottom bar — full in normal mode, minimal in zen mode */}
+              {!zenMode && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
                   <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
                     {text.trim()
                       ? detectedType === 'FOLLOWUP'
@@ -484,51 +512,49 @@ export default function ThreadView() {
                       : <span>enter for newline · ⌘↵ to post</span>
                     }
                   </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button
+                      style={{ fontSize: 11, padding: '2px 8px', background: 'none', border: 'none', cursor: 'pointer', color: forceDecision ? 'var(--accent)' : 'var(--ink-faint)', fontFamily: 'inherit' }}
+                      onClick={() => setForceDecision(d => !d)}
+                      title="Mark as decision"
+                    >
+                      decision
+                    </button>
+                    <button
+                      onClick={() => setZenMode(true)}
+                      title="Focus mode"
+                      style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, background: 'none', color: 'var(--ink-faint)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <IconFocus size={13} />
+                    </button>
+                    <button
+                      style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: text.trim() ? 'var(--ink)' : 'var(--paper-3)', color: text.trim() ? 'var(--paper)' : 'var(--ink-faint)', border: 'none', cursor: text.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s' }}
+                      onClick={handleSubmit}
+                      disabled={!text.trim()}
+                      title="Post (⌘↵)"
+                    >
+                      <IconArrowUp size={14} strokeWidth={2} />
+                    </button>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              )}
+              {zenMode && text.trim() && (
+                <div style={{ marginTop: 8, fontSize: 11, color: 'var(--ink-faint)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {detectedType === 'FOLLOWUP'
+                    ? <><span style={{ color: 'var(--accent)' }}>follow-up</span>{parseEntry(text).who && <> · <span style={{ color: 'var(--accent)' }}>@{parseEntry(text).who}</span></>}</>
+                    : detectedType === 'DECISION'
+                    ? <span style={{ color: 'var(--ink-soft)' }}>decision</span>
+                    : <span>note</span>
+                  }
                   <button
-                    style={{
-                      fontSize: 11, padding: '2px 8px',
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      color: forceDecision ? 'var(--accent)' : 'var(--ink-faint)',
-                      fontFamily: 'inherit',
-                    }}
+                    style={{ fontSize: 11, padding: '0 6px', background: 'none', border: 'none', cursor: 'pointer', color: forceDecision ? 'var(--accent)' : 'var(--ink-faint)', fontFamily: 'inherit' }}
                     onClick={() => setForceDecision(d => !d)}
                     title="Mark as decision"
                   >
-                    decision
-                  </button>
-                  <button
-                    onClick={() => setZenMode(z => !z)}
-                    title={zenMode ? 'Exit zen mode (Esc)' : 'Focus mode'}
-                    style={{
-                      width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
-                      background: zenMode ? 'var(--accent-soft)' : 'none',
-                      color: zenMode ? 'var(--accent)' : 'var(--ink-faint)',
-                      border: 'none', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      transition: 'background 0.15s, color 0.15s',
-                    }}
-                  >
-                    <IconFocus size={13} />
-                  </button>
-                  <button
-                    style={{
-                      width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-                      background: text.trim() ? 'var(--ink)' : 'var(--paper-3)',
-                      color: text.trim() ? 'var(--paper)' : 'var(--ink-faint)',
-                      border: 'none', cursor: text.trim() ? 'pointer' : 'default',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      transition: 'background 0.15s',
-                    }}
-                    onClick={handleSubmit}
-                    disabled={!text.trim()}
-                    title="Post (⌘↵)"
-                  >
-                    <IconArrowUp size={14} strokeWidth={2} />
+                    · decision
                   </button>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Feed — normal mode only */}
