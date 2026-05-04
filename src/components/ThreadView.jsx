@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useApp } from '../store/AppContext.jsx';
 import { FollowupLine, Tag, Person, StateChip } from './atoms/Chips.jsx';
-import { IconChev, IconClock, IconCheck, IconArrowUp } from './atoms/Icons.jsx';
+import { IconChev, IconClock, IconCheck, IconArrowUp, IconFocus, IconX } from './atoms/Icons.jsx';
 import { nanoid } from '../lib/nanoid.js';
 import { today } from '../lib/utils.js';
 import MarkdownEditor from './MarkdownEditor.jsx';
@@ -121,6 +121,19 @@ export default function ThreadView() {
   const [forceDecision, setForceDecision] = useState(false);
   const [editingBlockId, setEditingBlockId] = useState(null);
   const editorRef = useRef(null);
+  const [zenMode, setZenMode] = useState(false);
+  const [zenTocCollapsed, setZenTocCollapsed] = useState(false);
+
+  // Parse headings from current draft text for the zen TOC
+  const zenHeadings = useMemo(() => {
+    if (!zenMode) return [];
+    const result = [];
+    for (const line of text.split('\n')) {
+      const m = line.match(/^(#{1,3})\s+(.+)/);
+      if (m) result.push({ level: m[1].length, text: m[2].trim() });
+    }
+    return result;
+  }, [text, zenMode]);
 
   const [rightPaneWidth, setRightPaneWidth] = useState(() => {
     const saved = localStorage.getItem('thread-right-pane-width');
@@ -219,7 +232,11 @@ export default function ThreadView() {
       if (e.key === 'Escape') { e.preventDefault(); setSlugQuery(null); return; }
     }
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); handleSubmit(); return; }
-    if (e.key === 'Escape') { e.preventDefault(); setText(''); setForceDecision(false); editorRef.current?.clear(); }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (zenMode) { setZenMode(false); return; }
+      setText(''); setForceDecision(false); editorRef.current?.clear();
+    }
   }
 
   function cycleFollowupState(blockId, current) {
@@ -242,272 +259,442 @@ export default function ThreadView() {
 
   return (
     <main
-      style={{
+      style={zenMode ? {
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'var(--paper)',
+        display: 'flex',
+        overflow: 'hidden',
+      } : {
         flex: 1, minWidth: 0, overflowY: 'hidden',
         display: 'flex',
         background: 'var(--paper)',
       }}
     >
-      {/* ── Left: feed + composer ── */}
-      <div style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: '18px 28px 40px', display: 'flex', flexDirection: 'column' }}>
-
-        {/* Breadcrumb */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, justifyContent: 'space-between' }}>
-          <div className="font-mono" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--ink-soft)' }}>
-            <span
-              style={{ cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2 }}
-              onClick={() => setSection('threads')}
-            >threads</span>
-            <IconChev size={11} /><span>{thread.kind}</span><IconChev size={11} /><span>{thread.status}</span>
-          </div>
-          <button
-            className="btn btn-soft"
-            style={{ fontSize: 11.5, padding: '3px 9px' }}
-            onClick={() => {
-              const next = { active: 'paused', paused: 'active', closed: 'active' }[thread.status] || 'active';
-              updateThread(thread.id, { status: next });
-            }}
-          >
-            {thread.status === 'active' ? 'Pause' : thread.status === 'paused' ? 'Resume' : 'Reopen'}
-          </button>
-        </div>
-
-        {/* Title */}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 4 }}>
-          <h1 className="font-sketch" style={{ margin: 0, fontSize: 26, fontWeight: 400, letterSpacing: 0.3 }}>
-            {thread.title}
-          </h1>
-          <StateChip state={thread.status === 'active' ? 'open' : thread.status === 'paused' ? 'waiting' : 'closed'} />
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
-          {thread.tags.map(t => <Tag key={t} t={t} />)}
-          {people.map(p => <Person key={p} name={p} />)}
-        </div>
-
-        {/* Composer */}
-        <div
+      {/* ── Zen: X button floats in corner, no bar ── */}
+      {zenMode && (
+        <button
+          onClick={() => setZenMode(false)}
+          title="Exit focus mode (Esc)"
           style={{
-            background: 'var(--paper-2)',
-            borderRadius: 14,
-            padding: '12px 14px',
-            marginBottom: 32,
-            position: 'relative',
+            position: 'absolute', top: 16, left: 16, zIndex: 10,
+            width: 26, height: 26, borderRadius: '50%',
+            background: 'var(--paper-3)', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--ink-soft)',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--line-strong)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'var(--paper-3)'; }}
+        >
+          <IconX size={12} />
+        </button>
+      )}
+
+      {/* ── Zen: submit button top-right ── */}
+      {zenMode && (
+        <button
+          onClick={handleSubmit}
+          disabled={!text.trim()}
+          title="Post note (⌘↵)"
+          style={{
+            position: 'absolute', top: 16, right: 20, zIndex: 10,
+            width: 30, height: 30, borderRadius: '50%',
+            background: text.trim() ? 'var(--ink)' : 'var(--paper-3)',
+            color: text.trim() ? 'var(--paper)' : 'var(--ink-faint)',
+            border: 'none', cursor: text.trim() ? 'pointer' : 'default',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'background 0.15s',
           }}
         >
-          {/* [[slug]] autocomplete dropdown */}
-          {slugSuggestions.length > 0 && (
-            <div style={{
-              position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
-              background: 'var(--paper-2)', border: '1px solid var(--line)',
-              borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-              zIndex: 100, overflowY: 'auto', maxHeight: 'calc(5 * 52px)',
-            }}>
-              {slugSuggestions.map((t, i) => (
-                <div
-                  key={t.id}
-                  onMouseDown={e => { e.preventDefault(); completeSugg(t); }}
-                  style={{
-                    padding: '7px 12px', cursor: 'pointer',
-                    background: i === slugIdx ? 'var(--paper-3)' : 'transparent',
-                    display: 'flex', flexDirection: 'column', gap: 1,
-                    borderBottom: i < slugSuggestions.length - 1 ? '1px solid var(--line)' : 'none',
-                  }}
-                >
-                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)' }}>{t.title}</span>
-                  <span style={{ fontSize: 11, color: 'var(--ink-faint)', fontFamily: 'monospace' }}>{t.id}</span>
-                </div>
-              ))}
+          <IconArrowUp size={14} strokeWidth={2} />
+        </button>
+      )}
+
+      {/* ── Zen TOC panel — vertically centered, no separator ── */}
+      {zenMode && (
+        <div style={{
+          width: zenTocCollapsed ? 44 : 240, flexShrink: 0,
+          height: '100%',
+          transition: 'width 0.22s ease',
+          overflowY: 'auto', overflowX: 'hidden',
+          display: 'flex', flexDirection: 'column',
+          justifyContent: 'center',
+          padding: zenTocCollapsed ? 0 : '0 20px',
+        }}>
+          {!zenTocCollapsed && zenHeadings.length > 0 && (
+            <div className="kicker" style={{ marginBottom: 10 }}>Contents</div>
+          )}
+          {zenHeadings.length === 0 && !zenTocCollapsed && (
+            <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', fontStyle: 'italic', lineHeight: 1.6 }}>
+              Use # headings as you write to build a table of contents.
             </div>
           )}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: zenTocCollapsed ? 0 : 1 }}>
+            {zenHeadings.map((h, i) =>
+              zenTocCollapsed ? (
+                <button
+                  key={i}
+                  onClick={() => editorRef.current?.scrollToHeading(h.text)}
+                  title={h.text}
+                  style={{
+                    width: h.level === 1 ? 8 : h.level === 2 ? 6 : 5,
+                    height: h.level === 1 ? 8 : h.level === 2 ? 6 : 5,
+                    borderRadius: '50%', background: 'var(--ink-faint)',
+                    border: 'none', cursor: 'pointer', padding: 0,
+                    margin: `${h.level === 1 ? 6 : 4}px auto`,
+                    display: 'block', flexShrink: 0,
+                    transition: 'background 0.12s, transform 0.12s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.transform = 'scale(1.35)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--ink-faint)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                />
+              ) : (
+                <button
+                  key={i}
+                  onClick={() => editorRef.current?.scrollToHeading(h.text)}
+                  style={{
+                    textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer',
+                    paddingTop: 3, paddingBottom: 3, paddingRight: 4,
+                    paddingLeft: (h.level - 1) * 14,
+                    fontSize: h.level === 1 ? 13 : h.level === 2 ? 12 : 11,
+                    fontWeight: h.level === 1 ? 500 : 400,
+                    color: h.level === 1 ? 'var(--ink)' : 'var(--ink-soft)',
+                    lineHeight: 1.4, width: '100%', fontFamily: 'inherit',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    borderRadius: 4, transition: 'color 0.1s, background 0.1s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'var(--paper-2)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = h.level === 1 ? 'var(--ink)' : 'var(--ink-soft)'; e.currentTarget.style.background = 'transparent'; }}
+                >
+                  {h.text}
+                </button>
+              )
+            )}
+          </div>
+          <button
+            onClick={() => setZenTocCollapsed(c => !c)}
+            title={zenTocCollapsed ? 'Expand contents' : 'Collapse contents'}
+            style={{
+              marginTop: 16, background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--ink-faint)', padding: '4px',
+              display: 'flex', alignItems: 'center',
+              justifyContent: zenTocCollapsed ? 'center' : 'flex-start',
+              gap: 4, width: '100%', fontSize: 11, borderRadius: 4,
+              transition: 'color 0.1s', flexShrink: 0,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--ink)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--ink-faint)'; }}
+          >
+            <span style={{ fontSize: 13, lineHeight: 1 }}>{zenTocCollapsed ? '›' : '‹'}</span>
+            {!zenTocCollapsed && <span>Collapse</span>}
+          </button>
+        </div>
+      )}
 
-          <MarkdownEditor
-            ref={editorRef}
-            initialValue=""
-            onChange={md => { setText(md); }}
-            onSlugQuery={query => { setSlugQuery(query); if (query !== null) setSlugIdx(0); }}
-            onKeyDown={handleKey}
-            placeholder="Add a note… @name for follow-ups · [[YYYY-MM-DD]] due date · [[thread-slug]] to link"
-            minHeight={72}
-            autoFocus
-          />
+        {/* ── Content column ── */}
+        <div style={zenMode ? {
+          flex: 1, overflowY: 'auto',
+          display: 'flex', justifyContent: 'center',
+          padding: '72px 40px 120px',
+        } : {
+          flex: 1, minWidth: 0, overflowY: 'auto',
+          padding: '18px 28px 40px',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', ...(zenMode ? { width: '100%', maxWidth: 720 } : {}) }}>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
-                {text.trim()
-                  ? detectedType === 'FOLLOWUP'
-                    ? <><span style={{ color: 'var(--accent)' }}>follow-up</span>{parseEntry(text).who && <> · <span style={{ color: 'var(--accent)' }}>@{parseEntry(text).who}</span></>}{parseEntry(text).due && <> · <span style={{ fontFamily: 'monospace' }}>{parseEntry(text).due}</span></>}</>
+            {/* Breadcrumb — normal mode only */}
+            {!zenMode && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, justifyContent: 'space-between' }}>
+                <div className="font-mono" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--ink-soft)' }}>
+                  <span
+                    style={{ cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2 }}
+                    onClick={() => setSection('threads')}
+                  >threads</span>
+                  <IconChev size={11} /><span>{thread.kind}</span><IconChev size={11} /><span>{thread.status}</span>
+                </div>
+                <button
+                  className="btn btn-soft"
+                  style={{ fontSize: 11.5, padding: '3px 9px' }}
+                  onClick={() => {
+                    const next = { active: 'paused', paused: 'active', closed: 'active' }[thread.status] || 'active';
+                    updateThread(thread.id, { status: next });
+                  }}
+                >
+                  {thread.status === 'active' ? 'Pause' : thread.status === 'paused' ? 'Resume' : 'Reopen'}
+                </button>
+              </div>
+            )}
+
+            {/* Title — zen mode: part of the page; normal mode: separate section */}
+            {zenMode && (
+              <h1 className="font-sketch" style={{ margin: '0 0 24px', fontSize: 30, fontWeight: 400, letterSpacing: 0.2, color: 'var(--ink)' }}>
+                {thread.title}
+              </h1>
+            )}
+            {!zenMode && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 4 }}>
+                  <h1 className="font-sketch" style={{ margin: 0, fontSize: 26, fontWeight: 400, letterSpacing: 0.3 }}>
+                    {thread.title}
+                  </h1>
+                  <StateChip state={thread.status === 'active' ? 'open' : thread.status === 'paused' ? 'waiting' : 'closed'} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
+                  {thread.tags.map(t => <Tag key={t} t={t} />)}
+                  {people.map(p => <Person key={p} name={p} />)}
+                </div>
+              </>
+            )}
+
+            {/* ── Composer — always rendered so editor never remounts ── */}
+            <div
+              className={zenMode ? 'zen-editor' : ''}
+              style={zenMode ? {
+                background: 'transparent',
+                padding: 0,
+                marginBottom: 0,
+                position: 'relative',
+              } : {
+                background: 'var(--paper-2)',
+                borderRadius: 14,
+                padding: '12px 14px',
+                marginBottom: 32,
+                position: 'relative',
+              }}
+            >
+              {/* [[slug]] autocomplete dropdown */}
+              {slugSuggestions.length > 0 && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
+                  background: 'var(--paper-2)', border: '1px solid var(--line)',
+                  borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                  zIndex: 100, overflowY: 'auto', maxHeight: 'calc(5 * 52px)',
+                }}>
+                  {slugSuggestions.map((t, i) => (
+                    <div
+                      key={t.id}
+                      onMouseDown={e => { e.preventDefault(); completeSugg(t); }}
+                      style={{
+                        padding: '7px 12px', cursor: 'pointer',
+                        background: i === slugIdx ? 'var(--paper-3)' : 'transparent',
+                        display: 'flex', flexDirection: 'column', gap: 1,
+                        borderBottom: i < slugSuggestions.length - 1 ? '1px solid var(--line)' : 'none',
+                      }}
+                    >
+                      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)' }}>{t.title}</span>
+                      <span style={{ fontSize: 11, color: 'var(--ink-faint)', fontFamily: 'monospace' }}>{t.id}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <MarkdownEditor
+                ref={editorRef}
+                initialValue=""
+                onChange={md => { setText(md); }}
+                onSlugQuery={query => { setSlugQuery(query); if (query !== null) setSlugIdx(0); }}
+                onKeyDown={handleKey}
+                placeholder="Add a note… @name for follow-ups · [[YYYY-MM-DD]] due date · [[thread-slug]] to link"
+                minHeight={zenMode ? 'calc(100vh - 260px)' : 72}
+                autoFocus
+              />
+
+              {/* Bottom bar — full in normal mode, minimal in zen mode */}
+              {!zenMode && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+                  <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
+                    {text.trim()
+                      ? detectedType === 'FOLLOWUP'
+                        ? <><span style={{ color: 'var(--accent)' }}>follow-up</span>{parseEntry(text).who && <> · <span style={{ color: 'var(--accent)' }}>@{parseEntry(text).who}</span></>}{parseEntry(text).due && <> · <span style={{ fontFamily: 'monospace' }}>{parseEntry(text).due}</span></>}</>
+                        : detectedType === 'DECISION'
+                        ? <span style={{ color: 'var(--ink-soft)' }}>decision</span>
+                        : <span>note</span>
+                      : <span>enter for newline · ⌘↵ to post</span>
+                    }
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button
+                      style={{ fontSize: 11, padding: '2px 8px', background: 'none', border: 'none', cursor: 'pointer', color: forceDecision ? 'var(--accent)' : 'var(--ink-faint)', fontFamily: 'inherit' }}
+                      onClick={() => setForceDecision(d => !d)}
+                      title="Mark as decision"
+                    >
+                      decision
+                    </button>
+                    <button
+                      onClick={() => setZenMode(true)}
+                      title="Focus mode"
+                      style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, background: 'none', color: 'var(--ink-faint)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <IconFocus size={13} />
+                    </button>
+                    <button
+                      style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: text.trim() ? 'var(--ink)' : 'var(--paper-3)', color: text.trim() ? 'var(--paper)' : 'var(--ink-faint)', border: 'none', cursor: text.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s' }}
+                      onClick={handleSubmit}
+                      disabled={!text.trim()}
+                      title="Post (⌘↵)"
+                    >
+                      <IconArrowUp size={14} strokeWidth={2} />
+                    </button>
+                  </div>
+                </div>
+              )}
+              {zenMode && text.trim() && (
+                <div style={{ marginTop: 8, fontSize: 11, color: 'var(--ink-faint)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {detectedType === 'FOLLOWUP'
+                    ? <><span style={{ color: 'var(--accent)' }}>follow-up</span>{parseEntry(text).who && <> · <span style={{ color: 'var(--accent)' }}>@{parseEntry(text).who}</span></>}</>
                     : detectedType === 'DECISION'
                     ? <span style={{ color: 'var(--ink-soft)' }}>decision</span>
                     : <span>note</span>
-                  : <span>enter for newline · ⌘↵ to post</span>
-                }
-              </span>
+                  }
+                  <button
+                    style={{ fontSize: 11, padding: '0 6px', background: 'none', border: 'none', cursor: 'pointer', color: forceDecision ? 'var(--accent)' : 'var(--ink-faint)', fontFamily: 'inherit' }}
+                    onClick={() => setForceDecision(d => !d)}
+                    title="Mark as decision"
+                  >
+                    · decision
+                  </button>
+                </div>
+              )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <button
-                style={{
-                  fontSize: 11, padding: '2px 8px',
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: forceDecision ? 'var(--accent)' : 'var(--ink-faint)',
-                  fontFamily: 'inherit',
-                }}
-                onClick={() => setForceDecision(d => !d)}
-                title="Mark as decision"
-              >
-                decision
-              </button>
-              <button
-                style={{
-                  width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-                  background: text.trim() ? 'var(--ink)' : 'var(--paper-3)',
-                  color: text.trim() ? 'var(--paper)' : 'var(--ink-faint)',
-                  border: 'none', cursor: text.trim() ? 'pointer' : 'default',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'background 0.15s',
-                }}
-                onClick={handleSubmit}
-                disabled={!text.trim()}
-                title="Post (⌘↵)"
-              >
-                <IconArrowUp size={14} strokeWidth={2} />
-              </button>
-            </div>
+
+            {/* Feed — normal mode only */}
+            {!zenMode && (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {thread.blocks.length === 0 && (
+                    <div style={{ padding: '24px 0', color: 'var(--ink-faint)', fontSize: 13 }}>
+                      Nothing here yet — start writing above.
+                    </div>
+                  )}
+                  {dateGroups.map(group => (
+                    <div key={group.date}>
+                      <div className="font-mono" style={{ fontSize: 10, color: 'var(--ink-faint)', letterSpacing: '0.06em', marginBottom: 6, paddingLeft: 2 }}>
+                        {group.date}
+                      </div>
+                      <div style={{ background: 'var(--paper-2)', borderRadius: 12, padding: '2px 4px' }}>
+                        {group.blocks.map((b, i) => (
+                          <div key={b.id || i}>
+                            {i > 0 && <div style={{ height: 1, background: 'var(--line)', margin: '0 8px' }} />}
+                            <FeedEntry
+                              b={b}
+                              onToggle={b.type === 'FOLLOWUP' ? () => cycleFollowupState(b.id, b.state) : null}
+                              onEdit={text => updateBlock(thread.id, b.id, { text })}
+                              isEditing={editingBlockId === b.id}
+                              onStartEdit={() => setEditingBlockId(b.id)}
+                              onStopEdit={() => setEditingBlockId(null)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div
+                  className="font-mono"
+                  style={{ marginTop: 28, fontSize: 11, color: 'var(--ink-faint)' }}
+                >
+                  {thread.filename} · {thread.blocks.length} entries
+                </div>
+              </>
+            )}
+
           </div>
         </div>
 
-        {/* Feed */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {thread.blocks.length === 0 && (
-            <div style={{ padding: '24px 0', color: 'var(--ink-faint)', fontSize: 13 }}>
-              Nothing here yet — start writing above.
-            </div>
-          )}
-          {dateGroups.map(group => (
-            <div key={group.date}>
-              <div className="font-mono" style={{ fontSize: 10, color: 'var(--ink-faint)', letterSpacing: '0.06em', marginBottom: 6, paddingLeft: 2 }}>
-                {group.date}
-              </div>
-              <div style={{ background: 'var(--paper-2)', borderRadius: 12, padding: '2px 4px' }}>
-                {group.blocks.map((b, i) => (
-                  <div key={b.id || i}>
-                    {i > 0 && <div style={{ height: 1, background: 'var(--line)', margin: '0 8px' }} />}
-                    <FeedEntry
-                      b={b}
-                      onToggle={b.type === 'FOLLOWUP' ? () => cycleFollowupState(b.id, b.state) : null}
-                      onEdit={text => updateBlock(thread.id, b.id, { text })}
-                      isEditing={editingBlockId === b.id}
-                      onStartEdit={() => setEditingBlockId(b.id)}
-                      onStopEdit={() => setEditingBlockId(null)}
-                    />
+        {/* ── Right rail drag handle — normal mode only ── */}
+        {!zenMode && (
+          <div
+            onMouseDown={startRightDrag}
+            style={{
+              width: 4, cursor: 'col-resize', flexShrink: 0,
+              background: 'transparent', transition: 'background 0.15s', zIndex: 10,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.opacity = '0.35'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.opacity = '1'; }}
+          />
+        )}
+
+        {/* ── Right rail — normal mode only ── */}
+        {!zenMode && (
+          <aside style={{ width: rightPaneWidth, flexShrink: 0, borderLeft: '1px solid var(--line)', paddingLeft: 16, paddingTop: '18px', paddingBottom: '40px', display: 'flex', flexDirection: 'column', gap: 18, overflowY: 'auto' }}>
+            <section>
+              <div className="kicker" style={{ marginBottom: 6 }}>Open follow-ups</div>
+              {openFUs.length === 0 && <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>None open.</div>}
+              {openFUs.map((fu, i) => (
+                <FollowupLine key={fu.id || i} fu={fu} compact onToggle={() => cycleFollowupState(fu.id, fu.state)} />
+              ))}
+            </section>
+
+            {people.length > 0 && (
+              <section>
+                <div className="kicker" style={{ marginBottom: 6 }}>People</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {people.map(p => {
+                    const owed = thread.blocks.filter(b => b.type === 'FOLLOWUP' && b.who === p && b.state === 'open').length;
+                    const waiting = thread.blocks.filter(b => b.type === 'FOLLOWUP' && b.who === p && b.state === 'waiting').length;
+                    return (
+                      <div key={p} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '3px 0' }}>
+                        <Person name={p} />
+                        <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
+                          {owed > 0 && `${owed} open`}{waiting > 0 && ` · ${waiting} waiting`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            <section>
+              <div className="kicker" style={{ marginBottom: 6 }}>Meta</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {[
+                  ['kind', thread.kind],
+                  ['status', thread.status],
+                  ['created', thread.created ? thread.created.slice(0, 10) : '—'],
+                  ['entries', thread.blocks.length],
+                  ['file', thread.filename],
+                ].map(([k, v]) => (
+                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                    <span style={{ color: 'var(--ink-soft)' }}>{k}</span>
+                    <span className="font-mono" style={{ color: 'var(--ink-2)', fontSize: 10.5 }}>{v}</span>
                   </div>
                 ))}
               </div>
-            </div>
-          ))}
-        </div>
+            </section>
 
-        <div
-          className="font-mono"
-          style={{ marginTop: 28, fontSize: 11, color: 'var(--ink-faint)' }}
-        >
-          {thread.filename} · {thread.blocks.length} entries
-        </div>
-      </div>
-
-      {/* ── Right rail drag handle ── */}
-      <div
-        onMouseDown={startRightDrag}
-        style={{
-          width: 4,
-          cursor: 'col-resize',
-          flexShrink: 0,
-          background: 'transparent',
-          transition: 'background 0.15s',
-          zIndex: 10,
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.opacity = '0.35'; }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.opacity = '1'; }}
-      />
-
-      {/* ── Right rail ── */}
-      <aside style={{ width: rightPaneWidth, flexShrink: 0, borderLeft: '1px solid var(--line)', paddingLeft: 16, paddingTop: '18px', paddingBottom: '40px', display: 'flex', flexDirection: 'column', gap: 18, overflowY: 'auto' }}>
-        <section>
-          <div className="kicker" style={{ marginBottom: 6 }}>Open follow-ups</div>
-          {openFUs.length === 0 && <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>None open.</div>}
-          {openFUs.map((fu, i) => (
-            <FollowupLine key={fu.id || i} fu={fu} compact onToggle={() => cycleFollowupState(fu.id, fu.state)} />
-          ))}
-        </section>
-
-        {people.length > 0 && (
-          <section>
-            <div className="kicker" style={{ marginBottom: 6 }}>People</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {people.map(p => {
-                const owed = thread.blocks.filter(b => b.type === 'FOLLOWUP' && b.who === p && b.state === 'open').length;
-                const waiting = thread.blocks.filter(b => b.type === 'FOLLOWUP' && b.who === p && b.state === 'waiting').length;
-                return (
-                  <div key={p} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '3px 0' }}>
-                    <Person name={p} />
-                    <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
-                      {owed > 0 && `${owed} open`}{waiting > 0 && ` · ${waiting} waiting`}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+            <section>
+              <div className="kicker" style={{ marginBottom: 6 }}>Backlinks</div>
+              {backlinks.length === 0 ? (
+                <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', fontStyle: 'italic' }}>
+                  No threads link here yet.<br />
+                  <span style={{ fontSize: 10.5 }}>Use [[{thread.id}]] in any block.</span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {backlinks.map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => openThread(t.id)}
+                      style={{
+                        textAlign: 'left', padding: '4px 6px', borderRadius: 4,
+                        background: 'transparent', border: '1px solid transparent',
+                        cursor: 'pointer', fontFamily: 'inherit', fontSize: 12,
+                        color: 'var(--accent)',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--paper-2)'; e.currentTarget.style.borderColor = 'var(--line)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent'; }}
+                    >
+                      ← {t.title}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+          </aside>
         )}
 
-        <section>
-          <div className="kicker" style={{ marginBottom: 6 }}>Meta</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {[
-              ['kind', thread.kind],
-              ['status', thread.status],
-              ['created', thread.created ? thread.created.slice(0, 10) : '—'],
-              ['entries', thread.blocks.length],
-              ['file', thread.filename],
-            ].map(([k, v]) => (
-              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                <span style={{ color: 'var(--ink-soft)' }}>{k}</span>
-                <span className="font-mono" style={{ color: 'var(--ink-2)', fontSize: 10.5 }}>{v}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section>
-          <div className="kicker" style={{ marginBottom: 6 }}>Backlinks</div>
-          {backlinks.length === 0 ? (
-            <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', fontStyle: 'italic' }}>
-              No threads link here yet.<br />
-              <span style={{ fontSize: 10.5 }}>Use [[{thread.id}]] in any block.</span>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {backlinks.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => openThread(t.id)}
-                  style={{
-                    textAlign: 'left', padding: '4px 6px', borderRadius: 4,
-                    background: 'transparent', border: '1px solid transparent',
-                    cursor: 'pointer', fontFamily: 'inherit', fontSize: 12,
-                    color: 'var(--accent)',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--paper-2)'; e.currentTarget.style.borderColor = 'var(--line)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent'; }}
-                >
-                  ← {t.title}
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
-      </aside>
     </main>
   );
 }

@@ -42,6 +42,23 @@ const MarkdownEditor = forwardRef(function MarkdownEditor(
     clear() { editor?.commands.clearContent(); },
     focus(pos = 'end') { editor?.commands.focus(pos); },
     getMarkdown() { return editor?.storage.markdown.getMarkdown() ?? ''; },
+    scrollToHeading(headingText) {
+      if (!editor) return;
+      let targetPos = null;
+      editor.state.doc.descendants((node, pos) => {
+        if (targetPos !== null) return false;
+        if (node.type.name === 'heading' && node.textContent === headingText) {
+          targetPos = pos;
+          return false;
+        }
+      });
+      if (targetPos === null) return;
+      try {
+        editor.chain().focus().setTextSelection(targetPos + 1).run();
+        const domNode = editor.view.nodeDOM(targetPos);
+        if (domNode) domNode.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (_) {}
+    },
     insertSlugCompletion(threadId) {
       if (!editor) return;
       const { from } = editor.state.selection;
