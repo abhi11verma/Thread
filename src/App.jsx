@@ -15,7 +15,6 @@ import ScratchView from './components/ScratchView.jsx';
 import ArchiveView from './components/ArchiveView.jsx';
 import RitualsView from './components/RitualsView.jsx';
 import { applyTheme, findTheme, getActiveThemeKey } from './lib/theme.js';
-import ZenModeView from './components/ZenModeView.jsx';
 
 function AppShell() {
   const { dirHandle, section, loading } = useApp();
@@ -29,7 +28,6 @@ function AppShell() {
   const [newThreadTitle, setNewThreadTitle] = useState('');
   const [showAddRitual, setShowAddRitual] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
-  const [showZen, setShowZen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem('thread-sidebar-width');
     return saved ? parseInt(saved, 10) : 272;
@@ -50,8 +48,7 @@ function AppShell() {
         return;
       }
       if ((e.metaKey || e.ctrlKey) && (e.key === 'n' || e.key === 'N')) { e.preventDefault(); setNewThreadTitle(''); setShowNewThread(true); return; }
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); setShowZen(s => !s); return; }
-      if (e.key === 'Escape') { setShowZen(false); setShowNewThread(false); setShowAddRitual(false); setShowSearch(false); return; }
+      if (e.key === 'Escape') { setShowNewThread(false); setShowAddRitual(false); setShowSearch(false); return; }
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     }
     window.addEventListener('keydown', onKey);
@@ -98,7 +95,6 @@ function AppShell() {
         setThemeKey={setThemeKey}
         onNewThread={() => openNewThread()}
         onAddRitual={() => setShowAddRitual(true)}
-        onZen={() => setShowZen(true)}
         width={sidebarWidth}
       />
 
@@ -132,7 +128,6 @@ function AppShell() {
       {showNewThread && <NewThreadModal initialTitle={newThreadTitle} onClose={() => setShowNewThread(false)} />}
       {showAddRitual && <AddRitualModal onClose={() => setShowAddRitual(false)} />}
       {showSearch && <SearchModal onClose={() => setShowSearch(false)} onNewThread={title => openNewThread(title)} />}
-      {showZen && <ZenModeView onClose={() => setShowZen(false)} />}
     </div>
   );
 }

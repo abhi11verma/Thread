@@ -3,7 +3,7 @@ import { useApp } from '../store/AppContext.jsx';
 import {
   IconSpark, IconInbox, IconThread, IconCheck, IconPeople,
   IconCal, IconArchive, IconPlus, IconSun, IconMoon, IconUpdate, IconNote,
-  IconFolder, IconX, IconGear, IconRepeat, IconFocus,
+  IconFolder, IconX, IconGear, IconRepeat,
 } from './atoms/Icons.jsx';
 import { Tag } from './atoms/Chips.jsx';
 import { today } from '../lib/utils.js';
@@ -39,7 +39,7 @@ function themePreview(t) {
   };
 }
 
-export default function Sidebar({ themeKey, setThemeKey, onNewThread, onAddRitual, onZen, width = 272 }) {
+export default function Sidebar({ themeKey, setThemeKey, onNewThread, onAddRitual, width = 272 }) {
   const { section, activeThreadId, activeTag, threads, scratches, rituals, streaks, doneDates, setSection, setActiveTag, openThread, getAllFollowups, rescanDirectory, pickDirectory, dirHandle, loading } = useApp();
   const [showSettings, setShowSettings] = useState(false);
   const [customThemes, setCustomThemes] = useState(() => getCustomThemes());
@@ -232,16 +232,6 @@ export default function Sidebar({ themeKey, setThemeKey, onNewThread, onAddRitua
 
       {/* The Daily — persistent sidebar strip */}
       <TheDailySidebar rituals={rituals} streaks={streaks} doneDates={doneDates} onAdd={onAddRitual} />
-
-      {/* Zen mode */}
-      <button
-        className="btn btn-ghost"
-        style={{ justifyContent: 'flex-start', gap: 8, padding: '5px 8px', fontSize: 12, color: 'var(--ink-soft)' }}
-        onClick={onZen}
-        title="Zen writing mode (⌘⇧Z)"
-      >
-        <IconFocus size={14} /> Focus <span className="kbd" style={{ marginLeft: 'auto', fontSize: 10 }}>⌘⇧Z</span>
-      </button>
 
       {/* Settings */}
       <button
