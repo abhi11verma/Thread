@@ -262,7 +262,7 @@ export default function ThreadView() {
       style={zenMode ? {
         position: 'fixed', inset: 0, zIndex: 9999,
         background: 'var(--paper)',
-        display: 'flex', flexDirection: 'column',
+        display: 'flex',
         overflow: 'hidden',
       } : {
         flex: 1, minWidth: 0, overflowY: 'hidden',
@@ -270,110 +270,109 @@ export default function ThreadView() {
         background: 'var(--paper)',
       }}
     >
-      {/* ── Zen top bar ── */}
+      {/* ── Zen: X button floats in corner, no bar ── */}
       {zenMode && (
-        <div style={{ display: 'flex', alignItems: 'center', padding: '10px 18px', borderBottom: '1px solid var(--line)', flexShrink: 0, gap: 10 }}>
-          <button
-            onClick={() => setZenMode(false)}
-            title="Exit zen mode (Esc)"
-            style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--paper-3)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-soft)', flexShrink: 0 }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--line-strong)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'var(--paper-3)'; }}
-          >
-            <IconX size={12} />
-          </button>
-          <span className="font-sketch" style={{ fontSize: 15, fontWeight: 500, color: 'var(--ink)' }}>{thread.title}</span>
-        </div>
+        <button
+          onClick={() => setZenMode(false)}
+          title="Exit focus mode (Esc)"
+          style={{
+            position: 'absolute', top: 16, left: 16, zIndex: 10,
+            width: 26, height: 26, borderRadius: '50%',
+            background: 'var(--paper-3)', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--ink-soft)',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--line-strong)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'var(--paper-3)'; }}
+        >
+          <IconX size={12} />
+        </button>
       )}
 
-      {/* ── Body row ── */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-
-        {/* ── Zen TOC panel ── */}
-        {zenMode && (
-          <div style={{
-            width: zenTocCollapsed ? 44 : 240, flexShrink: 0,
-            borderRight: '1px solid var(--line)',
-            transition: 'width 0.22s ease',
-            overflowY: 'auto', overflowX: 'hidden',
-            display: 'flex', flexDirection: 'column',
-            padding: zenTocCollapsed ? '24px 0 16px' : '24px 16px 16px',
-          }}>
-            {!zenTocCollapsed && zenHeadings.length > 0 && (
-              <div className="kicker" style={{ marginBottom: 10 }}>Contents</div>
-            )}
-            {zenHeadings.length === 0 && !zenTocCollapsed && (
-              <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', fontStyle: 'italic', lineHeight: 1.6 }}>
-                Use # headings as you write to build a table of contents.
-              </div>
-            )}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: zenTocCollapsed ? 0 : 1 }}>
-              {zenHeadings.map((h, i) =>
-                zenTocCollapsed ? (
-                  <button
-                    key={i}
-                    onClick={() => editorRef.current?.scrollToHeading(h.text)}
-                    title={h.text}
-                    style={{
-                      width: h.level === 1 ? 8 : h.level === 2 ? 6 : 5,
-                      height: h.level === 1 ? 8 : h.level === 2 ? 6 : 5,
-                      borderRadius: '50%', background: 'var(--ink-faint)',
-                      border: 'none', cursor: 'pointer', padding: 0,
-                      margin: `${h.level === 1 ? 6 : 4}px auto`,
-                      display: 'block', flexShrink: 0,
-                      transition: 'background 0.12s, transform 0.12s',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.transform = 'scale(1.35)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--ink-faint)'; e.currentTarget.style.transform = 'scale(1)'; }}
-                  />
-                ) : (
-                  <button
-                    key={i}
-                    onClick={() => editorRef.current?.scrollToHeading(h.text)}
-                    style={{
-                      textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer',
-                      paddingTop: 3, paddingBottom: 3, paddingRight: 4,
-                      paddingLeft: (h.level - 1) * 14,
-                      fontSize: h.level === 1 ? 13 : h.level === 2 ? 12 : 11,
-                      fontWeight: h.level === 1 ? 500 : 400,
-                      color: h.level === 1 ? 'var(--ink)' : 'var(--ink-soft)',
-                      lineHeight: 1.4, width: '100%', fontFamily: 'inherit',
-                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                      borderRadius: 4, transition: 'color 0.1s, background 0.1s',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'var(--paper-2)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = h.level === 1 ? 'var(--ink)' : 'var(--ink-soft)'; e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    {h.text}
-                  </button>
-                )
-              )}
+      {/* ── Zen TOC panel — no separator, part of the page ── */}
+      {zenMode && (
+        <div style={{
+          width: zenTocCollapsed ? 44 : 240, flexShrink: 0,
+          transition: 'width 0.22s ease',
+          overflowY: 'auto', overflowX: 'hidden',
+          display: 'flex', flexDirection: 'column',
+          padding: zenTocCollapsed ? '72px 0 40px' : '72px 20px 40px',
+        }}>
+          {!zenTocCollapsed && zenHeadings.length > 0 && (
+            <div className="kicker" style={{ marginBottom: 10 }}>Contents</div>
+          )}
+          {zenHeadings.length === 0 && !zenTocCollapsed && (
+            <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', fontStyle: 'italic', lineHeight: 1.6 }}>
+              Use # headings as you write to build a table of contents.
             </div>
-            <button
-              onClick={() => setZenTocCollapsed(c => !c)}
-              title={zenTocCollapsed ? 'Expand contents' : 'Collapse contents'}
-              style={{
-                marginTop: 16, background: 'none', border: 'none', cursor: 'pointer',
-                color: 'var(--ink-faint)', padding: '4px',
-                display: 'flex', alignItems: 'center',
-                justifyContent: zenTocCollapsed ? 'center' : 'flex-start',
-                gap: 4, width: '100%', fontSize: 11, borderRadius: 4,
-                transition: 'color 0.1s', flexShrink: 0,
-              }}
-              onMouseEnter={e => { e.currentTarget.style.color = 'var(--ink)'; }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'var(--ink-faint)'; }}
-            >
-              <span style={{ fontSize: 13, lineHeight: 1 }}>{zenTocCollapsed ? '›' : '‹'}</span>
-              {!zenTocCollapsed && <span>Collapse</span>}
-            </button>
+          )}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: zenTocCollapsed ? 0 : 1 }}>
+            {zenHeadings.map((h, i) =>
+              zenTocCollapsed ? (
+                <button
+                  key={i}
+                  onClick={() => editorRef.current?.scrollToHeading(h.text)}
+                  title={h.text}
+                  style={{
+                    width: h.level === 1 ? 8 : h.level === 2 ? 6 : 5,
+                    height: h.level === 1 ? 8 : h.level === 2 ? 6 : 5,
+                    borderRadius: '50%', background: 'var(--ink-faint)',
+                    border: 'none', cursor: 'pointer', padding: 0,
+                    margin: `${h.level === 1 ? 6 : 4}px auto`,
+                    display: 'block', flexShrink: 0,
+                    transition: 'background 0.12s, transform 0.12s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.transform = 'scale(1.35)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--ink-faint)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                />
+              ) : (
+                <button
+                  key={i}
+                  onClick={() => editorRef.current?.scrollToHeading(h.text)}
+                  style={{
+                    textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer',
+                    paddingTop: 3, paddingBottom: 3, paddingRight: 4,
+                    paddingLeft: (h.level - 1) * 14,
+                    fontSize: h.level === 1 ? 13 : h.level === 2 ? 12 : 11,
+                    fontWeight: h.level === 1 ? 500 : 400,
+                    color: h.level === 1 ? 'var(--ink)' : 'var(--ink-soft)',
+                    lineHeight: 1.4, width: '100%', fontFamily: 'inherit',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    borderRadius: 4, transition: 'color 0.1s, background 0.1s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'var(--paper-2)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = h.level === 1 ? 'var(--ink)' : 'var(--ink-soft)'; e.currentTarget.style.background = 'transparent'; }}
+                >
+                  {h.text}
+                </button>
+              )
+            )}
           </div>
-        )}
+          <button
+            onClick={() => setZenTocCollapsed(c => !c)}
+            title={zenTocCollapsed ? 'Expand contents' : 'Collapse contents'}
+            style={{
+              marginTop: 16, background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--ink-faint)', padding: '4px',
+              display: 'flex', alignItems: 'center',
+              justifyContent: zenTocCollapsed ? 'center' : 'flex-start',
+              gap: 4, width: '100%', fontSize: 11, borderRadius: 4,
+              transition: 'color 0.1s', flexShrink: 0,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--ink)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--ink-faint)'; }}
+          >
+            <span style={{ fontSize: 13, lineHeight: 1 }}>{zenTocCollapsed ? '›' : '‹'}</span>
+            {!zenTocCollapsed && <span>Collapse</span>}
+          </button>
+        </div>
+      )}
 
         {/* ── Content column ── */}
         <div style={zenMode ? {
           flex: 1, overflowY: 'auto',
           display: 'flex', justifyContent: 'center',
-          padding: '48px 40px 80px',
+          padding: '64px 40px 80px',
         } : {
           flex: 1, minWidth: 0, overflowY: 'auto',
           padding: '18px 28px 40px',
@@ -404,7 +403,12 @@ export default function ThreadView() {
               </div>
             )}
 
-            {/* Title — normal mode only */}
+            {/* Title — zen mode: part of the page; normal mode: separate section */}
+            {zenMode && (
+              <h1 className="font-sketch" style={{ margin: '0 0 24px', fontSize: 30, fontWeight: 400, letterSpacing: 0.2, color: 'var(--ink)' }}>
+                {thread.title}
+              </h1>
+            )}
             {!zenMode && (
               <>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 4 }}>
@@ -665,7 +669,6 @@ export default function ThreadView() {
           </aside>
         )}
 
-      </div>
     </main>
   );
 }
