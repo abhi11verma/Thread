@@ -48,3 +48,4 @@ export const IconGear    = p => <Icon {...p} d={<><circle cx="12" cy="12" r="3"/
 export const IconArrowUp = p => <Icon {...p} d={<><path d="M12 19V5M5 12l7-7 7 7"/></>}/>;
 export const IconRepeat  = p => <Icon {...p} d={<><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></>}/>;
 export const IconPin     = p => <Icon {...p} d={<><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/></>}/>;
+export const IconFocus   = p => <Icon {...p} d={<><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></>}/>;
