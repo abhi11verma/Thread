@@ -442,9 +442,9 @@ export default function ThreadView() {
         display: 'flex', flexDirection: 'column',
       }}>
         <div style={zenMode ? {
-          maxWidth: 720,
+          maxWidth: 900,
           margin: '0 auto',
-          padding: '18vh 60px 40vh',
+          padding: '18vh 40px 40vh',
           display: 'flex', flexDirection: 'column',
         } : {}}>
 
