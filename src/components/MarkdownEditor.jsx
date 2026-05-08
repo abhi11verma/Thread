@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -8,6 +8,9 @@ const MarkdownEditor = forwardRef(function MarkdownEditor(
   { initialValue = '', onChange, onKeyDown, onSlugQuery, placeholder = '', minHeight = 72, autoFocus = false },
   ref,
 ) {
+  const onKeyDownRef = useRef(onKeyDown);
+  useEffect(() => { onKeyDownRef.current = onKeyDown; }, [onKeyDown]);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
@@ -28,8 +31,8 @@ const MarkdownEditor = forwardRef(function MarkdownEditor(
     },
     editorProps: {
       handleKeyDown(_view, event) {
-        if (onKeyDown) {
-          onKeyDown(event);
+        if (onKeyDownRef.current) {
+          onKeyDownRef.current(event);
           return event.defaultPrevented;
         }
         return false;
@@ -42,6 +45,23 @@ const MarkdownEditor = forwardRef(function MarkdownEditor(
     clear() { editor?.commands.clearContent(); },
     focus(pos = 'end') { editor?.commands.focus(pos); },
     getMarkdown() { return editor?.storage.markdown.getMarkdown() ?? ''; },
+    scrollToHeading(headingText) {
+      if (!editor) return;
+      let targetPos = null;
+      editor.state.doc.descendants((node, pos) => {
+        if (targetPos !== null) return false;
+        if (node.type.name === 'heading' && node.textContent === headingText) {
+          targetPos = pos;
+          return false;
+        }
+      });
+      if (targetPos === null) return;
+      try {
+        editor.chain().focus().setTextSelection(targetPos + 1).run();
+        const domNode = editor.view.nodeDOM(targetPos);
+        if (domNode) domNode.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (_) {}
+    },
     insertSlugCompletion(threadId) {
       if (!editor) return;
       const { from } = editor.state.selection;

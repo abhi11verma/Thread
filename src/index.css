@@ -237,6 +237,51 @@ html, body, #root {
   background: var(--paper-2);
 }
 
+/* ── Zen mode editor — Cormorant Garamond serif, dark canvas ── */
+.zen-editor .wysiwyg-editor {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 22px;
+  line-height: 1.55;
+  color: #c9c3b8;
+  caret-color: #d8c79a;
+}
+.zen-editor .wysiwyg-editor > * + * { margin-top: 0; }
+.zen-editor .wysiwyg-editor p { margin: 0 0 1em 0; }
+.zen-editor .wysiwyg-editor p:last-child { margin-bottom: 0; }
+.zen-editor .wysiwyg-editor h1 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 38px; font-weight: 500; letter-spacing: -0.01em;
+  color: #c9c3b8; margin: 1.6em 0 0.5em; line-height: 1.2;
+}
+.zen-editor .wysiwyg-editor h2 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 30px; font-weight: 500;
+  color: #c9c3b8; margin: 1.4em 0 0.45em; line-height: 1.2;
+}
+.zen-editor .wysiwyg-editor h3 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 24px; font-weight: 500;
+  color: #8a847a; margin: 1.2em 0 0.4em; line-height: 1.25;
+}
+.zen-editor .wysiwyg-editor ul,
+.zen-editor .wysiwyg-editor ol { padding-left: 1.4em; margin: 0.5em 0; }
+.zen-editor .wysiwyg-editor li { margin: 0.25em 0; }
+.zen-editor .wysiwyg-editor blockquote {
+  font-style: italic;
+  border-left: 2px solid #2c2926;
+  padding-left: 1.1em; color: #8a847a; margin: 0.8em 0;
+}
+.zen-editor .wysiwyg-editor hr { border: none; border-top: 1px solid #2c2926; margin: 2em 0; }
+.zen-editor .wysiwyg-editor pre { font-size: 14px; margin: 0.8em 0; background: #181614; border-radius: 6px; padding: 12px 16px; }
+.zen-editor .wysiwyg-editor code { background: #181614; color: #c9c3b8; border-radius: 3px; padding: 0 4px; font-size: 0.82em; }
+.zen-editor .wysiwyg-editor strong { color: #c9c3b8; }
+.zen-editor .wysiwyg-editor em { color: #d8c79a; font-style: italic; }
+.zen-editor .wysiwyg-editor a { color: #d8c79a; }
+.zen-editor .wysiwyg-editor p.is-editor-empty:first-child::before {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: inherit; color: #4a4641; font-style: italic;
+}
+
 /* ── Tiptap WYSIWYG editor ── */
 .wysiwyg-editor {
   outline: none;
